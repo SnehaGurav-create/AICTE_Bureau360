@@ -8,14 +8,24 @@ import { Button } from '../ui/Button';
 import { AlertTriangleIcon, NetworkIcon, CheckCircleIcon, FilterIcon } from '../icons/Icons';
 import { OVERLAP_COMPARISONS, OVERLAP_STATUS_LABELS, COMPLAINT_CASES } from '../../data/mockData';
 import { ComplaintRelationshipGraph } from '../graph/ComplaintRelationshipGraph';
+import { useAuth } from '../../services/authContext.js';
+import { ACTIONS } from '../../services/authConfig.js';
 
 export function OverlapReviewQueue({ onInspectCase }) {
+  const { can } = useAuth();
+  const canUpdateStatus = can(ACTIONS.UPDATE_STATUS);
+
   const [activeView, setActiveView] = useState('queue'); // 'queue' | 'graph'
   const [tierFilter, setTierFilter] = useState('ALL');
   const [comparisons, setComparisons] = useState(OVERLAP_COMPARISONS);
   const [notificationMsg, setNotificationMsg] = useState('');
 
   const handleUpdateStatus = (comparisonId, newStatus) => {
+    if (!canUpdateStatus) {
+      setNotificationMsg('Action restricted: Viewer role has read-only access and cannot update relationship status.');
+      setTimeout(() => setNotificationMsg(''), 4000);
+      return;
+    }
     setComparisons((prev) =>
       prev.map((c) => (c.id === comparisonId ? { ...c, status: newStatus } : c))
     );
@@ -214,29 +224,35 @@ export function OverlapReviewQueue({ onInspectCase }) {
                         <strong>Current Findings:</strong> {item.notes}
                       </span>
 
-                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleUpdateStatus(item.id, 'awaiting_review')}
-                        >
-                          Mark Awaiting Review
-                        </Button>
-                        <Button
-                          variant="accent"
-                          size="sm"
-                          onClick={() => handleUpdateStatus(item.id, 'confirmed')}
-                        >
-                          Confirm Relationship
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleUpdateStatus(item.id, 'rejected')}
-                        >
-                          Reject False Positive
-                        </Button>
-                      </div>
+                      {canUpdateStatus ? (
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleUpdateStatus(item.id, 'awaiting_review')}
+                          >
+                            Mark Awaiting Review
+                          </Button>
+                          <Button
+                            variant="accent"
+                            size="sm"
+                            onClick={() => handleUpdateStatus(item.id, 'confirmed')}
+                          >
+                            Confirm Relationship
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleUpdateStatus(item.id, 'rejected')}
+                          >
+                            Reject False Positive
+                          </Button>
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          🔒 Read-only mode (Viewer): Relationship classification actions disabled
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

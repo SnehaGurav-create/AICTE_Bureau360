@@ -4,17 +4,31 @@ import React from 'react';
 import styles from '../../app/shell.module.css';
 import { MenuIcon, BellIcon, SearchIcon } from '../icons/Icons';
 import { BUREAUS } from '../../data/mockData';
+import { useAuth } from '../../services/authContext.js';
+import { ROLE_META } from '../../services/authConfig.js';
 
 export function TopBar({
   onToggleSidebar,
+  isCollapsed = false,
   activeTab,
   selectedBureau,
   searchQuery,
   onSearchChange,
   onOpenNotifications,
   onPreviewCore,
+  onLogout,
 }) {
   const currentBureau = BUREAUS.find((b) => b.id === selectedBureau) || BUREAUS[0];
+  const { currentUser, role, signOut } = useAuth();
+  const roleMeta = role ? ROLE_META[role] : null;
+
+  const handleSignOut = () => {
+    if (onLogout) {
+      onLogout();
+    } else {
+      signOut();
+    }
+  };
 
   const pageTitle = {
     dashboard: 'AICTE Central Command Dashboard',
@@ -26,6 +40,7 @@ export function TopBar({
     alerts: 'Priority Escalation & SLA Breach Alerts',
     reports: 'Governance, Analytical Summaries & SLA Tracking',
     new_complaint: 'Institutional Grievance Intake & New Petition Docket',
+    user_management: 'Institutional User & Role Administration',
   }[activeTab] || 'AICTE Bureau360 Portal';
 
   return (
@@ -33,9 +48,11 @@ export function TopBar({
       <div className={styles.topBarLeft}>
         <button
           type="button"
-          className={styles.mobileMenuBtn}
+          className={styles.sidebarToggleBtn}
           onClick={onToggleSidebar}
-          aria-label="Open Navigation Sidebar"
+          aria-label={isCollapsed ? 'Expand sidebar (Ctrl+B)' : 'Collapse sidebar (Ctrl+B)'}
+          title={isCollapsed ? 'Expand sidebar (Ctrl+B)' : 'Collapse sidebar (Ctrl+B)'}
+          aria-expanded={!isCollapsed}
         >
           <MenuIcon size={20} />
         </button>
@@ -105,13 +122,64 @@ export function TopBar({
           <span className={styles.notificationCount}>14</span>
         </button>
 
-        <div className={styles.userProfile}>
-          <div className={styles.userAvatar}>AO</div>
-          <div className={styles.userText}>
-            <div className={styles.userName}>Dr. R. K. Soni</div>
-            <div className={styles.userRole}>Nodal Officer, AICTE HQ</div>
+        {currentUser && (
+          <div className={styles.userProfile} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div
+              className={styles.userAvatar}
+              style={{
+                background: roleMeta?.color || '#0d2946',
+                color: '#ffffff',
+                fontWeight: 700,
+              }}
+            >
+              {currentUser.initials || currentUser.name?.slice(0, 2).toUpperCase() || 'AO'}
+            </div>
+            <div className={styles.userText}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span className={styles.userName}>{currentUser.name}</span>
+                {roleMeta && (
+                  <span
+                    style={{
+                      fontSize: '0.625rem',
+                      fontWeight: 700,
+                      padding: '2px 6px',
+                      borderRadius: '999px',
+                      background: roleMeta.bgColor,
+                      color: roleMeta.color,
+                      letterSpacing: '0.04em',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    {roleMeta.shortLabel}
+                  </span>
+                )}
+              </div>
+              <div className={styles.userRole}>
+                {currentUser.designation || 'AICTE Officer'}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className={styles.notificationBtn}
+              style={{
+                marginLeft: '4px',
+                padding: '6px 8px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                color: '#64748b',
+                cursor: 'pointer',
+              }}
+              title="Sign Out (Demo Session)"
+              aria-label="Sign Out"
+            >
+              <span>Sign Out</span>
+            </button>
           </div>
-        </div>
+        )}
       </div>
     </header>
   );

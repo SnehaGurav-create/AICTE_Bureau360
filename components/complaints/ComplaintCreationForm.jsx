@@ -22,8 +22,20 @@ import {
   submitComplaint,
   submitComplaintDemo,
 } from '../../services/api';
+import { useAuth } from '../../services/authContext.js';
+import { ACTIONS } from '../../services/authConfig.js';
+import { AccessDenied } from '../auth/AccessDenied';
 
 export function ComplaintCreationForm({ onCancel, onDemoSubmissionComplete }) {
+  const { can } = useAuth();
+  if (!can(ACTIONS.CREATE_COMPLAINT)) {
+    return (
+      <AccessDenied
+        attemptedTab="Register Complaint"
+        onGoToDashboard={onCancel}
+      />
+    );
+  }
   // Central Form State Model
   const [formState, setFormState] = useState({
     selectedAicteId: '',

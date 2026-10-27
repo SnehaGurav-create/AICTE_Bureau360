@@ -9,6 +9,7 @@ import {
   CheckCircleIcon,
   AlertTriangleIcon,
 } from '../icons/Icons';
+import { AnimatedCounter } from '../ui/AnimatedCounter';
 
 export function SummaryCards({ cases = [], activeStatusFilter, onSelectStatus }) {
   // Dynamically derive summary metrics from the passed dataset
@@ -18,12 +19,16 @@ export function SummaryCards({ cases = [], activeStatusFilter, onSelectStatus })
   const resolved = cases.filter((c) => c.status === 'Resolved').length;
   const overdue = cases.filter((c) => c.status === 'Overdue' || c.ageingDays > 30).length;
 
+  const pendingPct = total > 0 ? Math.round((pending / total) * 100) : 0;
+  const resolvedPct = total > 0 ? Math.round((resolved / total) * 100) : 0;
+
   const cards = [
     {
       id: 'ALL',
       label: 'Total Complaints',
       value: total,
-      footer: 'Cumulative register across AICTE',
+      delay: 0,
+      footer: <span>Cumulative register across AICTE</span>,
       icon: <FileTextIcon size={18} />,
       classMod: styles.cardTotal,
       color: 'var(--color-brand-primary)',
@@ -32,7 +37,12 @@ export function SummaryCards({ cases = [], activeStatusFilter, onSelectStatus })
       id: 'Pending',
       label: 'Pending Triage',
       value: pending,
-      footer: `${total > 0 ? Math.round((pending / total) * 100) : 0}% of complaints pending assignment`,
+      delay: 90,
+      footer: (
+        <span>
+          <AnimatedCounter value={pendingPct} suffix="%" delay={140} duration={1000} /> of complaints pending assignment
+        </span>
+      ),
       icon: <ClockIcon size={18} />,
       classMod: styles.cardPending,
       color: '#d97706',
@@ -41,7 +51,8 @@ export function SummaryCards({ cases = [], activeStatusFilter, onSelectStatus })
       id: 'Under Review',
       label: 'Under Review',
       value: underReview,
-      footer: 'Active bureau investigations & notices',
+      delay: 180,
+      footer: <span>Active bureau investigations &amp; notices</span>,
       icon: <RefreshCwIcon size={18} />,
       classMod: styles.cardReview,
       color: '#2563eb',
@@ -50,7 +61,12 @@ export function SummaryCards({ cases = [], activeStatusFilter, onSelectStatus })
       id: 'Resolved',
       label: 'Resolved',
       value: resolved,
-      footer: `${total > 0 ? Math.round((resolved / total) * 100) : 0}% compliance closure rate`,
+      delay: 270,
+      footer: (
+        <span>
+          <AnimatedCounter value={resolvedPct} suffix="%" delay={320} duration={1000} /> compliance closure rate
+        </span>
+      ),
       icon: <CheckCircleIcon size={18} />,
       classMod: styles.cardResolved,
       color: '#16a34a',
@@ -59,7 +75,8 @@ export function SummaryCards({ cases = [], activeStatusFilter, onSelectStatus })
       id: 'Overdue',
       label: 'Overdue (>30d SLA)',
       value: overdue,
-      footer: 'Requires immediate executive notice',
+      delay: 360,
+      footer: <span>Requires immediate executive notice</span>,
       icon: <AlertTriangleIcon size={18} />,
       classMod: styles.cardOverdue,
       color: '#dc2626',
@@ -80,6 +97,7 @@ export function SummaryCards({ cases = [], activeStatusFilter, onSelectStatus })
               backgroundColor: isSelected ? 'var(--bg-surface-secondary)' : 'var(--bg-surface)',
               boxShadow: isSelected ? 'var(--shadow-md)' : undefined,
               outline: isSelected ? `2px solid ${card.color}` : 'none',
+              transition: 'all 0.2s ease',
             }}
             role="button"
             tabIndex={0}
@@ -97,7 +115,12 @@ export function SummaryCards({ cases = [], activeStatusFilter, onSelectStatus })
             </div>
             <div className={styles.summaryValueGroup}>
               <span className={styles.summaryValue} style={{ color: card.color }}>
-                {card.value}
+                <AnimatedCounter
+                  value={card.value}
+                  duration={1100}
+                  delay={card.delay}
+                  ariaLabel={`${card.label}: ${card.value}`}
+                />
               </span>
               {isSelected && (
                 <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: card.color, textTransform: 'uppercase' }}>
@@ -112,3 +135,4 @@ export function SummaryCards({ cases = [], activeStatusFilter, onSelectStatus })
     </section>
   );
 }
+

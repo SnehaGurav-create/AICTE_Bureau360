@@ -7,8 +7,14 @@ import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { ShieldIcon, NetworkIcon, ClockIcon, AlertTriangleIcon, CheckCircleIcon } from '../icons/Icons';
 import { BUREAUS, COMPLAINT_CASES } from '../../data/mockData';
+import { useAuth } from '../../services/authContext.js';
+import { ACTIONS } from '../../services/authConfig.js';
+import { AnimatedCounter } from '../ui/AnimatedCounter';
 
 export function BureauWorkloadView({ onInspectCase }) {
+  const { can } = useAuth();
+  const canCoordinate = can(ACTIONS.ASSIGN_COMPLAINT) || can(ACTIONS.TRANSFER_COMPLAINT);
+
   const [selectedBureauId, setSelectedBureauId] = useState('all');
   const [backendActionNotice, setBackendActionNotice] = useState('');
 
@@ -37,6 +43,7 @@ export function BureauWorkloadView({ onInspectCase }) {
   });
 
   const handleScheduleJointHearing = (caseId) => {
+    if (!canCoordinate) return;
     setBackendActionNotice(`Joint hearing scheduling for docket ${caseId} is pending backend integration (POST /api/v1/coordination/schedule-hearing).`);
     setTimeout(() => setBackendActionNotice(''), 5000);
   };
@@ -81,16 +88,16 @@ export function BureauWorkloadView({ onInspectCase }) {
             </div>
             <div className={styles.summaryValueGroup}>
               <span className={styles.summaryValue} style={{ color: b.color }}>
-                {b.totalAssigned} Cases
+                <AnimatedCounter value={b.totalAssigned} delay={bureauStats.indexOf(b) * 80} duration={1000} /> Cases
               </span>
               <Badge variant={b.overdue > 0 ? 'critical' : 'success'}>
-                {b.slaRate}% SLA
+                <AnimatedCounter value={b.slaRate} suffix="% SLA" delay={bureauStats.indexOf(b) * 80 + 40} duration={900} />
               </Badge>
             </div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '4px' }}>
-              <div>Active Inquiries: <strong>{b.active}</strong></div>
-              <div>Joint Cell Cases: <strong>{b.multiCount}</strong></div>
-              <div>Overdue SLA: <strong style={{ color: b.overdue > 0 ? '#dc2626' : 'inherit' }}>{b.overdue}</strong></div>
+              <div>Active Inquiries: <strong><AnimatedCounter value={b.active} delay={100} duration={900} /></strong></div>
+              <div>Joint Cell Cases: <strong><AnimatedCounter value={b.multiCount} delay={150} duration={900} /></strong></div>
+              <div>Overdue SLA: <strong style={{ color: b.overdue > 0 ? '#dc2626' : 'inherit' }}><AnimatedCounter value={b.overdue} delay={200} duration={900} /></strong></div>
             </div>
           </div>
         ))}
@@ -154,13 +161,15 @@ export function BureauWorkloadView({ onInspectCase }) {
                   <Button variant="outline" size="sm" onClick={() => onInspectCase(c)}>
                     Inspect Full Dossier
                   </Button>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => handleScheduleJointHearing(c.id)}
-                  >
-                    Schedule Joint Cell Hearing (API Pending)
-                  </Button>
+                  {canCoordinate && (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => handleScheduleJointHearing(c.id)}
+                    >
+                      Schedule Joint Cell Hearing (API Pending)
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}

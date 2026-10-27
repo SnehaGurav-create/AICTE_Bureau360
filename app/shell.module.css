@@ -24,8 +24,12 @@
   bottom: 0;
   left: 0;
   z-index: 100;
-  transition: transform var(--transition-normal), width var(--transition-normal);
+  transition: transform var(--transition-normal), width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sidebarCollapsed {
+  width: 68px !important;
 }
 
 /* AICTE Flag Accent Strip at top of sidebar */
@@ -41,6 +45,48 @@
   align-items: center;
   gap: var(--space-3);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+  transition: padding 0.2s ease;
+}
+
+.desktopCollapseBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  cursor: pointer;
+  margin-left: auto;
+  transition: all var(--transition-fast);
+}
+
+.desktopCollapseBtn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+.sidebarCloseBtn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  cursor: pointer;
+  margin-left: auto;
+  transition: all var(--transition-fast);
+}
+
+.sidebarCloseBtn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
 }
 
 .logoMonogram {
@@ -188,6 +234,11 @@
   flex-direction: column;
   min-width: 0;
   min-height: 100vh;
+  transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mainWrapperCollapsed {
+  margin-left: 68px;
 }
 
 .topBar {
@@ -208,6 +259,25 @@
   display: flex;
   align-items: center;
   gap: var(--space-4);
+}
+
+.sidebarToggleBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 6px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+}
+
+.sidebarToggleBtn:hover {
+  background-color: var(--bg-surface-hover);
+  color: var(--color-brand-primary);
+  border-color: var(--border-default);
 }
 
 .mobileMenuBtn {
@@ -347,33 +417,147 @@
   display: none;
 }
 
+/* --------------------------------------------------------------------------
+   Desktop Collapsed Sidebar Styles
+   -------------------------------------------------------------------------- */
+.sidebarCollapsed .brandInfo {
+  display: none;
+}
+
+.sidebarCollapsed .desktopCollapseBtn {
+  display: none;
+}
+
+.sidebarCollapsed .sidebarHeader {
+  justify-content: center;
+  padding: var(--space-4) 8px;
+}
+
+.sidebarCollapsed .navSectionLabel {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 10px 4px;
+  font-size: 0;
+  padding: 0;
+  overflow: hidden;
+  border: none;
+}
+
+.sidebarCollapsed .navItem {
+  justify-content: center;
+  padding: 10px 0;
+  position: relative;
+}
+
+.sidebarCollapsed .navItemLeft {
+  gap: 0;
+  justify-content: center;
+}
+
+.sidebarCollapsed .navItemLeft span:not(.icon) {
+  display: none;
+}
+
+.sidebarCollapsed .navBadge {
+  display: none;
+}
+
+.sidebarCollapsed .sidebarFooter {
+  padding: 12px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidebarCollapsed .portalBadge span:not(.liveIndicator) {
+  display: none;
+}
+
 @media (max-width: 1024px) {
   .sidebar {
     transform: translateX(-100%);
+    width: 280px !important;
   }
 
   .sidebarOpen {
     transform: translateX(0);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.35);
   }
 
-  .mainWrapper {
-    margin-left: 0;
+  .mainWrapper,
+  .mainWrapperCollapsed {
+    margin-left: 0 !important;
   }
 
-  .mobileMenuBtn {
-    display: inline-flex;
+  .sidebarCloseBtn {
+    display: flex;
+  }
+
+  .desktopCollapseBtn {
+    display: none !important;
+  }
+
+  /* In mobile drawer mode, always display full contents even if desktop collapsed flag is true */
+  .sidebarCollapsed .brandInfo {
+    display: flex;
+  }
+
+  .sidebarCollapsed .navSectionLabel {
+    height: auto;
+    background: transparent;
+    font-size: 0.6875rem;
+    padding: var(--space-3) var(--space-3) var(--space-2);
+    overflow: visible;
+  }
+
+  .sidebarCollapsed .navItem {
+    justify-content: space-between;
+    padding: 9px 12px;
+  }
+
+  .sidebarCollapsed .navItemLeft {
+    gap: var(--space-3);
+  }
+
+  .sidebarCollapsed .navItemLeft span:not(.icon) {
+    display: inline;
+  }
+
+  .sidebarCollapsed .navBadge {
+    display: inline-block;
+  }
+
+  .sidebarCollapsed .sidebarFooter {
+    padding: var(--space-4);
+    align-items: stretch;
+  }
+
+  .sidebarCollapsed .portalBadge span:not(.liveIndicator) {
+    display: inline;
   }
 
   .drawerOverlay {
     display: block;
     position: fixed;
     inset: 0;
-    background: rgba(11, 31, 54, 0.5);
+    background: rgba(11, 31, 54, 0.55);
     z-index: 99;
+    backdrop-filter: blur(2px);
+    animation: fadeInOverlay 0.2s ease-out;
   }
 
   .searchBox {
     width: 200px;
+  }
+}
+
+@keyframes fadeInOverlay {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 
@@ -394,3 +578,4 @@
     padding: var(--space-4);
   }
 }
+

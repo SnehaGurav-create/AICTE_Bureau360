@@ -19,8 +19,14 @@ import {
   CATEGORIES,
   exportComplaintsToCSV,
 } from '../../data/mockData';
+import { useAuth } from '../../services/authContext.js';
+import { ACTIONS } from '../../services/authConfig.js';
+import { AnimatedCounter } from '../ui/AnimatedCounter';
 
 export function ReportsAndAnalyticsView({ onInspectCase }) {
+  const { can } = useAuth();
+  const canExport = can(ACTIONS.EXPORT_CSV);
+
   const [selectedBureau, setSelectedBureau] = useState('ALL');
   const [dateRange, setDateRange] = useState('ALL');
   const [toastMessage, setToastMessage] = useState('');
@@ -72,12 +78,14 @@ export function ReportsAndAnalyticsView({ onInspectCase }) {
   }, []);
 
   const handleExportFull = () => {
+    if (!canExport) return;
     exportComplaintsToCSV(filteredCases);
     setToastMessage(`CSV export generated locally for ${filteredCases.length} complaints.`);
     setTimeout(() => setToastMessage(''), 4000);
   };
 
   const handleExportOverdue = () => {
+    if (!canExport) return;
     const overdueOnly = filteredCases.filter((c) => c.status === 'Overdue' || c.ageingDays > 30);
     exportComplaintsToCSV(overdueOnly);
     setToastMessage(`CSV export generated locally for ${overdueOnly.length} overdue SLA breaches.`);
@@ -85,6 +93,7 @@ export function ReportsAndAnalyticsView({ onInspectCase }) {
   };
 
   const handleExportMultiBureau = () => {
+    if (!canExport) return;
     const jointOnly = filteredCases.filter((c) => c.secondaryBureaus?.length > 0);
     exportComplaintsToCSV(jointOnly);
     setToastMessage(`CSV export generated locally for ${jointOnly.length} cross-bureau joint cases.`);
@@ -92,6 +101,7 @@ export function ReportsAndAnalyticsView({ onInspectCase }) {
   };
 
   const handleUnintegratedExport = (serviceName) => {
+    if (!canExport) return;
     setToastMessage(`Notice: ${serviceName} is pending backend endpoint integration.`);
     setTimeout(() => setToastMessage(''), 5000);
   };
@@ -119,36 +129,44 @@ export function ReportsAndAnalyticsView({ onInspectCase }) {
           </div>
 
           {/* Quick Local Export Buttons */}
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={handleExportFull}
-            >
-              📥 Export Register (CSV)
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExportOverdue}
-            >
-              ⚠️ Export Overdue SLA (CSV)
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExportMultiBureau}
-            >
-              🔗 Export Joint Inquiries (CSV)
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleUnintegratedExport('Automated PDF Executive Dossier (POST /api/v1/reports/pdf)')}
-              title="Backend service pending"
-            >
-              📄 Executive PDF (Unintegrated)
-            </Button>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+            {canExport ? (
+              <>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleExportFull}
+                >
+                  📥 Export Register (CSV)
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportOverdue}
+                >
+                  ⚠️ Export Overdue SLA (CSV)
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportMultiBureau}
+                >
+                  🔗 Export Joint Inquiries (CSV)
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleUnintegratedExport('Automated PDF Executive Dossier (POST /api/v1/reports/pdf)')}
+                  title="Backend service pending"
+                >
+                  📄 Executive PDF (Unintegrated)
+                </Button>
+              </>
+            ) : (
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                🔒 Read-only mode (Viewer): Export actions disabled
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -160,8 +178,12 @@ export function ReportsAndAnalyticsView({ onInspectCase }) {
             <span>Complaints Under Scrutiny</span>
             <ShieldIcon size={18} />
           </div>
-          <div className={styles.summaryValue}>{totalCount}</div>
-          <div className={styles.summaryFooter}>{activeCount} Active Inquiries • {resolvedCount} Resolved</div>
+          <div className={styles.summaryValue}>
+            <AnimatedCounter value={totalCount} duration={1100} delay={0} />
+          </div>
+          <div className={styles.summaryFooter}>
+            <AnimatedCounter value={activeCount} duration={1000} delay={100} /> Active Inquiries • <AnimatedCounter value={resolvedCount} duration={1000} delay={150} /> Resolved
+          </div>
         </div>
 
         <div className={styles.summaryCard} style={{ borderTopColor: '#059669' }}>
@@ -169,7 +191,9 @@ export function ReportsAndAnalyticsView({ onInspectCase }) {
             <span>Statutory SLA Compliance</span>
             <CheckCircleIcon size={18} />
           </div>
-          <div className={styles.summaryValue} style={{ color: '#059669' }}>{slaComplianceRate}%</div>
+          <div className={styles.summaryValue} style={{ color: '#059669' }}>
+            <AnimatedCounter value={slaComplianceRate} suffix="%" duration={1100} delay={100} />
+          </div>
           <div className={styles.summaryFooter}>Within AICTE 30-day mandate</div>
         </div>
 
@@ -178,7 +202,9 @@ export function ReportsAndAnalyticsView({ onInspectCase }) {
             <span>Average Case Ageing</span>
             <ClockIcon size={18} />
           </div>
-          <div className={styles.summaryValue} style={{ color: '#d97706' }}>{avgAgeing} Days</div>
+          <div className={styles.summaryValue} style={{ color: '#d97706' }}>
+            <AnimatedCounter value={avgAgeing} suffix=" Days" duration={1100} delay={200} />
+          </div>
           <div className={styles.summaryFooter}>Target threshold: &lt; 21 days</div>
         </div>
 
@@ -187,7 +213,9 @@ export function ReportsAndAnalyticsView({ onInspectCase }) {
             <span>Overdue Mandate Breaches</span>
             <AlertTriangleIcon size={18} />
           </div>
-          <div className={styles.summaryValue} style={{ color: '#dc2626' }}>{overdueCount}</div>
+          <div className={styles.summaryValue} style={{ color: '#dc2626' }}>
+            <AnimatedCounter value={overdueCount} duration={1100} delay={300} />
+          </div>
           <div className={styles.summaryFooter}>Requires Apex Committee escalation</div>
         </div>
       </div>

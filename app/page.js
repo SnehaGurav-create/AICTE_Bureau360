@@ -18,6 +18,11 @@ import { AlertCentreView } from '../components/alerts/AlertCentreView';
 import { ReportsAndAnalyticsView } from '../components/reports/ReportsAndAnalyticsView';
 import { IntelligenceCoreLoader } from '../components/ui/IntelligenceCoreLoader';
 import { LandingPage } from '../components/landing/LandingPage';
+import { LoginPage } from '../components/auth/LoginPage';
+import { AccessDenied } from '../components/auth/AccessDenied';
+import { UserManagementView } from '../components/admin/UserManagementView';
+import { AuthProvider, useAuth } from '../services/authContext.js';
+import { ACTIONS, canAccessTab } from '../services/authConfig.js';
 import { Modal } from '../components/ui/Modal';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
@@ -30,9 +35,19 @@ import {
 } from '../data/mockData';
 import styles from './dashboard.module.css';
 
-export default function DashboardPage() {
+function DashboardPageContent() {
+  const { currentUser, isAuthenticated, role, signOut, can } = useAuth();
   const [activeTab, setActiveTab] = useState('landing');
+  const [attemptedTab, setAttemptedTab] = useState(null);
   const [selectedBureau, setSelectedBureau] = useState('all');
+
+  // Automatically scope to assigned bureau for Officer role
+  useEffect(() => {
+    if (role === 'OFFICER' && currentUser?.bureau) {
+      setSelectedBureau(currentUser.bureau);
+      setBureauFilter(currentUser.bureau);
+    }
+  }, [role, currentUser]);
 
   // Institution Selection State
   const [selectedInstitution, setSelectedInstitution] = useState(null);
@@ -92,6 +107,9 @@ export default function DashboardPage() {
 
   // Sync sidebar bureau selection with toolbar bureau filter
   const handleSelectBureauFromSidebar = (bureauId) => {
+    if (role === 'OFFICER' && currentUser?.bureau && bureauId !== currentUser.bureau) {
+      return; // Officer cannot switch to another bureau
+    }
     setSelectedBureau(bureauId);
     setBureauFilter(bureauId);
     setSelectedCase(null);
@@ -99,17 +117,58 @@ export default function DashboardPage() {
     setCurrentPage(1);
   };
 
+  const handleNavigateTab = (tab) => {
+    if (tab === 'landing') {
+      setActiveTab('landing');
+      setSelectedCase(null);
+      setSelectedInstitution(null);
+      return;
+    }
+    if (!isAuthenticated) {
+      setAttemptedTab(tab);
+      setActiveTab('login');
+      return;
+    }
+    setActiveTab(tab);
+    setSelectedCase(null);
+    setSelectedInstitution(null);
+  };
+
+  const handleLoginSuccess = (user) => {
+    if (user?.role === 'OFFICER' && user?.bureau) {
+      setSelectedBureau(user.bureau);
+      setBureauFilter(user.bureau);
+    }
+    const destination = attemptedTab && canAccessTab(user?.role, attemptedTab) ? attemptedTab : 'dashboard';
+    setActiveTab(destination);
+    setAttemptedTab(null);
+  };
+
+  const handleLogout = () => {
+    signOut();
+    setActiveTab('landing');
+    setSelectedCase(null);
+    setSelectedInstitution(null);
+    setSelectedBureau('all');
+    setBureauFilter('all');
+    setAttemptedTab(null);
+  };
+
   const handleBureauChangeFromToolbar = (bureauId) => {
+    if (role === 'OFFICER' && currentUser?.bureau && bureauId !== currentUser.bureau) {
+      return; // Officer cannot switch to another bureau
+    }
     setBureauFilter(bureauId);
     setSelectedBureau(bureauId);
     setCurrentPage(1);
   };
 
   const handleResetFilters = () => {
+    const defaultBureau = role === 'OFFICER' && currentUser?.bureau ? currentUser.bureau : 'all';
     setSearchQuery('');
     setStatusFilter('ALL');
-    setBureauFilter('all');
-    setSelectedBureau('all');
+    setBureauFilter(defaultBureau);
+    setSelectedBureau(defaultBureau);
     setPriorityFilter('ALL');
     setCategoryFilter('ALL');
     setDateFrom('');
@@ -171,6 +230,14 @@ export default function DashboardPage() {
   // 1. Filter dataset according to all parameters
   const filteredCases = useMemo(() => {
     return casesList.filter((c) => {
+      // Officer Role Scope: strictly locked to assigned bureau regardless of filter state
+      if (role === 'OFFICER' && currentUser?.bureau) {
+        const officerBureauObj = BUREAUS.find((b) => b.id === currentUser.bureau);
+        if (officerBureauObj && c.assignedBureau !== officerBureauObj.name && !c.secondaryBureaus?.includes(officerBureauObj.name)) {
+          return false;
+        }
+      }
+
       // Bureau Filter
       if (bureauFilter !== 'all') {
         const bureauObj = BUREAUS.find((b) => b.id === bureauFilter);
@@ -265,43 +332,33 @@ export default function DashboardPage() {
         />
       )}
 
-      {/* Main View Router: Landing Page or Dashboard Shell */}
+      {/* Main View Router: Landing Page, Login Page, or Protected Dashboard Shell */}
       {activeTab === 'landing' ? (
         <LandingPage
-          onEnterDashboard={() => {
-            setActiveTab('dashboard');
-            setSelectedCase(null);
-            setSelectedInstitution(null);
-          }}
-          onSelectTab={(tab) => {
-            setActiveTab(tab);
-            setSelectedCase(null);
-            setSelectedInstitution(null);
-          }}
+          onEnterDashboard={() => handleNavigateTab('dashboard')}
+          onSelectTab={handleNavigateTab}
           onSearch={(val) => {
             setSearchQuery(val);
-            setActiveTab('complaints');
-            setSelectedCase(null);
-            setSelectedInstitution(null);
-            setCurrentPage(1);
+            handleNavigateTab('complaints');
           }}
           onOpenNotifications={() => setIsNotificationsOpen(true)}
           onSelectFilter={(status) => {
             setStatusFilter(status);
-            setActiveTab('complaints');
-            setSelectedCase(null);
-            setSelectedInstitution(null);
-            setCurrentPage(1);
+            handleNavigateTab('complaints');
+          }}
+        />
+      ) : (!isAuthenticated || activeTab === 'login') ? (
+        <LoginPage
+          onLoginSuccess={handleLoginSuccess}
+          onCancel={() => {
+            setActiveTab('landing');
+            setAttemptedTab(null);
           }}
         />
       ) : (
         <AppShell
           activeTab={selectedCase ? 'complaints' : activeTab}
-          onSelectTab={(tab) => {
-            setActiveTab(tab);
-            setSelectedCase(null);
-            setSelectedInstitution(null);
-          }}
+          onSelectTab={handleNavigateTab}
           selectedBureau={selectedBureau}
           onSelectBureau={handleSelectBureauFromSidebar}
           searchQuery={searchQuery}
@@ -311,9 +368,16 @@ export default function DashboardPage() {
           }}
           onOpenNotifications={() => setIsNotificationsOpen(true)}
           onPreviewCore={() => setIsInitializing(true)}
+          onLogout={handleLogout}
         >
-          {/* 1. If a case is selected, render the full detailed dossier view */}
-          {selectedCase ? (
+          {/* If the authenticated role cannot access the requested tab, show AccessDenied */}
+          {!canAccessTab(role, activeTab) ? (
+            <AccessDenied
+              attemptedTab={activeTab}
+              onGoToDashboard={() => setActiveTab('dashboard')}
+              onGoToLogin={handleLogout}
+            />
+          ) : selectedCase ? (
             <ComplaintDetailView
               complaint={selectedCase}
               onBack={() => setSelectedCase(null)}
@@ -358,6 +422,9 @@ export default function DashboardPage() {
       ) : activeTab === 'reports' ? (
         /* 8. Reports, Analytics & Local CSV Export */
         <ReportsAndAnalyticsView onInspectCase={(c) => setSelectedCase(c)} />
+      ) : activeTab === 'user_management' ? (
+        /* 9. Institutional User & Role Administration (ADMIN Only) */
+        <UserManagementView />
       ) : (
         /* Main Dashboard & Complaints View */
         <>
@@ -401,6 +468,7 @@ export default function DashboardPage() {
             }}
             bureauFilter={bureauFilter}
             onBureauChange={handleBureauChangeFromToolbar}
+            officerBureau={role === 'OFFICER' ? currentUser?.bureau : undefined}
             priorityFilter={priorityFilter}
             onPriorityChange={(val) => {
               setPriorityFilter(val);
@@ -427,8 +495,8 @@ export default function DashboardPage() {
             onToggleSortOrder={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
             onResetFilters={handleResetFilters}
             onRefresh={handleRefresh}
-            onExportCSV={() => exportComplaintsToCSV(filteredCases)}
-            onNewComplaint={() => setActiveTab('new_complaint')}
+            onExportCSV={can(ACTIONS.EXPORT_CSV) ? () => exportComplaintsToCSV(filteredCases) : undefined}
+            onNewComplaint={can(ACTIONS.CREATE_COMPLAINT) ? () => setActiveTab('new_complaint') : undefined}
           />
 
           {/* 4. Complaints Repository Table with Sorting, Ageing & Pagination */}
@@ -521,4 +589,12 @@ export default function DashboardPage() {
   </Modal>
 </>
 );
+}
+
+export default function DashboardPage() {
+  return (
+    <AuthProvider>
+      <DashboardPageContent />
+    </AuthProvider>
+  );
 }

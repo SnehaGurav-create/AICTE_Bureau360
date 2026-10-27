@@ -29,6 +29,7 @@ export function FiltersToolbar({
   onRefresh,
   onExportCSV,
   onNewComplaint,
+  officerBureau,
 }) {
   const hasActiveFilters =
     Boolean(searchQuery) ||
@@ -156,14 +157,23 @@ export function FiltersToolbar({
         <select
           className={styles.filterSelect}
           value={bureauFilter}
+          disabled={Boolean(officerBureau)}
           onChange={(e) => onBureauChange(e.target.value)}
           aria-label="Filter by Bureau"
+          title={officerBureau ? `Locked: Officer access is restricted to ${BUREAUS.find((b) => b.id === officerBureau)?.name || 'assigned bureau'}` : 'Filter by Bureau'}
+          style={officerBureau ? { opacity: 0.8, cursor: 'not-allowed', backgroundColor: 'var(--bg-surface-secondary)' } : undefined}
         >
-          {BUREAUS.map((b) => (
-            <option key={b.id} value={b.id}>
-              {b.name}
+          {officerBureau ? (
+            <option value={officerBureau}>
+              {BUREAUS.find((b) => b.id === officerBureau)?.name || 'Assigned Bureau'} (Officer Scoped)
             </option>
-          ))}
+          ) : (
+            BUREAUS.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name}
+              </option>
+            ))
+          )}
         </select>
 
         {/* Priority select */}

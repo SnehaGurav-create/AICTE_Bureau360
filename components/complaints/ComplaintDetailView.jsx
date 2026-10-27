@@ -16,8 +16,13 @@ import {
   ExternalLinkIcon,
 } from '../icons/Icons';
 import { OVERLAP_STATUS_LABELS, COMPLAINT_CASES } from '../../data/mockData';
+import { useAuth } from '../../services/authContext.js';
+import { ACTIONS } from '../../services/authConfig.js';
 
 export function ComplaintDetailView({ complaint, onBack, onSelectRelatedCase, onSelectInstitution }) {
+  const { can } = useAuth();
+  const canUpdateStatus = can(ACTIONS.UPDATE_STATUS);
+  const canEdit = can(ACTIONS.EDIT_COMPLAINT);
   if (!complaint) {
     return (
       <div className={styles.detailContainer}>
@@ -311,36 +316,54 @@ export function ComplaintDetailView({ complaint, onBack, onSelectRelatedCase, on
           <div className={styles.statusSelectorRow}>
             <button
               type="button"
+              disabled={!canUpdateStatus}
               className={`${styles.statusRadioBtn} ${currentOverlapStatus === 'suggested' ? styles.statusRadioActive : ''}`}
               onClick={() => handleUpdateOverlapStatus('suggested')}
+              style={!canUpdateStatus ? { opacity: 0.6, cursor: 'not-allowed' } : undefined}
+              title={!canUpdateStatus ? 'Read-only mode: Cannot modify relationship tier' : undefined}
             >
               1. Possible Relationship Suggested
             </button>
 
             <button
               type="button"
+              disabled={!canUpdateStatus}
               className={`${styles.statusRadioBtn} ${currentOverlapStatus === 'awaiting_review' ? styles.statusRadioActive : ''}`}
               onClick={() => handleUpdateOverlapStatus('awaiting_review')}
+              style={!canUpdateStatus ? { opacity: 0.6, cursor: 'not-allowed' } : undefined}
+              title={!canUpdateStatus ? 'Read-only mode: Cannot modify relationship tier' : undefined}
             >
               2. Awaiting Human Review
             </button>
 
             <button
               type="button"
+              disabled={!canUpdateStatus}
               className={`${styles.statusRadioBtn} ${currentOverlapStatus === 'confirmed' ? styles.statusRadioActive : ''}`}
               onClick={() => handleUpdateOverlapStatus('confirmed')}
+              style={!canUpdateStatus ? { opacity: 0.6, cursor: 'not-allowed' } : undefined}
+              title={!canUpdateStatus ? 'Read-only mode: Cannot modify relationship tier' : undefined}
             >
               3. Relationship Confirmed by Reviewer
             </button>
 
             <button
               type="button"
+              disabled={!canUpdateStatus}
               className={`${styles.statusRadioBtn} ${currentOverlapStatus === 'rejected' ? styles.statusRadioActive : ''}`}
               onClick={() => handleUpdateOverlapStatus('rejected')}
+              style={!canUpdateStatus ? { opacity: 0.6, cursor: 'not-allowed' } : undefined}
+              title={!canUpdateStatus ? 'Read-only mode: Cannot modify relationship tier' : undefined}
             >
               4. Relationship Rejected by Reviewer
             </button>
           </div>
+
+          {!canUpdateStatus && (
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '6px' }}>
+              🔒 Read-only access: Relationship classification controls are disabled for Viewer role.
+            </div>
+          )}
 
           {statusUpdatedNotice && (
             <div style={{ fontSize: '0.75rem', color: '#16a34a', fontWeight: 600, marginTop: '4px' }}>
@@ -437,13 +460,19 @@ export function ComplaintDetailView({ complaint, onBack, onSelectRelatedCase, on
           title="Evidence & Document Repository"
           subtitle="Submitted affidavits, photo logs, and institutional circulars"
           action={
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleTriggerBackendAction('Upload Supporting Evidence', 'POST /api/v1/cases/documents')}
-            >
-              + Upload Document (API Pending)
-            </Button>
+            canEdit ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleTriggerBackendAction('Upload Supporting Evidence', 'POST /api/v1/cases/documents')}
+              >
+                + Upload Document (API Pending)
+              </Button>
+            ) : (
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                🔒 Read-Only Dossier
+              </span>
+            )
           }
         />
         <CardContent>
