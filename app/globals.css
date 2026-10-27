@@ -1,0 +1,154 @@
+/* ==========================================================================
+   AICTE Bureau360 — Design System Tokens & Global Base
+   Gov-Tech Enterprise Grade • SIH 2026 Problem Statement 26264
+   ========================================================================== */
+
+:root {
+  /* Brand Identity: AICTE Deep Navy & Warm Saffron */
+  --color-brand-primary: #0d2946;
+  --color-brand-primary-hover: #13385e;
+  --color-brand-primary-active: #091c30;
+  --color-brand-accent: #d96316;
+  --color-brand-accent-hover: #b84f0c;
+  --color-brand-accent-subtle: #fff4eb;
+  --color-brand-tricolor-green: #13773a;
+
+  /* Surfaces & Backgrounds */
+  --bg-app: #f4f6fa;
+  --bg-surface: #ffffff;
+  --bg-surface-elevated: #ffffff;
+  --bg-surface-secondary: #f8fafc;
+  --bg-surface-tertiary: #f1f5f9;
+  --bg-surface-hover: #f1f5f9;
+
+  /* Text & Typography */
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --text-inverse: #ffffff;
+
+  /* Borders & Dividers */
+  --border-subtle: #e2e8f0;
+  --border-default: #cbd5e1;
+  --border-strong: #94a3b8;
+  --border-focus: #0d2946;
+
+  /* Status Tokens: WCAG AA Compliant on respective tinted backgrounds */
+  --status-critical-text: #991b1b;
+  --status-critical-bg: #fef2f2;
+  --status-critical-border: #fecaca;
+
+  --status-warning-text: #92400e;
+  --status-warning-bg: #fffbeb;
+  --status-warning-border: #fde68a;
+
+  --status-info-text: #1e40af;
+  --status-info-bg: #eff6ff;
+  --status-info-border: #bfdbfe;
+
+  --status-success-text: #166534;
+  --status-success-bg: #f0fdf4;
+  --status-success-border: #bbf7d0;
+
+  --status-neutral-text: #475569;
+  --status-neutral-bg: #f1f5f9;
+  --status-neutral-border: #e2e8f0;
+
+  /* Overlap Detection Highlight Token */
+  --overlap-badge-text: #6b21a8;
+  --overlap-badge-bg: #faf5ff;
+  --overlap-badge-border: #e9d5ff;
+
+  /* Spacing Scale */
+  --space-1: 0.25rem;  /* 4px */
+  --space-2: 0.5rem;   /* 8px */
+  --space-3: 0.75rem;  /* 12px */
+  --space-4: 1rem;     /* 16px */
+  --space-5: 1.25rem;  /* 20px */
+  --space-6: 1.5rem;   /* 24px */
+  --space-8: 2rem;     /* 32px */
+  --space-10: 2.5rem;  /* 40px */
+
+  /* Border Radii */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  /* Shadows (Restrained, crisp enterprise elevation) */
+  --shadow-xs: 0 1px 2px rgba(13, 41, 70, 0.05);
+  --shadow-sm: 0 1px 3px rgba(13, 41, 70, 0.08), 0 1px 2px rgba(13, 41, 70, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(13, 41, 70, 0.08), 0 2px 4px -2px rgba(13, 41, 70, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(13, 41, 70, 0.08), 0 4px 6px -4px rgba(13, 41, 70, 0.03);
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Layout dimensions */
+  --sidebar-width: 280px;
+  --sidebar-collapsed-width: 72px;
+  --topbar-height: 64px;
+}
+
+/* CSS Reset & Defaults */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: var(--text-primary);
+  background-color: var(--bg-app);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Accessible Focus Outlines */
+:focus-visible {
+  outline: 2px solid var(--color-brand-primary);
+  outline-offset: 2px;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+}
+
+/* Base Utility Classes */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
