@@ -21,6 +21,9 @@ import { LandingPage } from '../components/landing/LandingPage';
 import { LoginPage } from '../components/auth/LoginPage';
 import { AccessDenied } from '../components/auth/AccessDenied';
 import { UserManagementView } from '../components/admin/UserManagementView';
+import { PgrcPortalView } from '../components/portals/PgrcPortalView';
+import { UserProfileView } from '../components/profile/UserProfileView';
+import { RoleDashboardBanner } from '../components/dashboard/RoleDashboardBanner';
 import { AuthProvider, useAuth } from '../services/authContext.js';
 import { ACTIONS, canAccessTab } from '../services/authConfig.js';
 import { Modal } from '../components/ui/Modal';
@@ -88,13 +91,24 @@ function DashboardPageContent() {
       }
       const bureauParam = params.get('bureau');
       if (bureauParam) {
-        setSelectedBureau(bureauParam);
-        setBureauFilter(bureauParam);
+        // Only non-officer roles can initialize bureau filter from URL
+        if (role !== 'OFFICER') {
+          setSelectedBureau(bureauParam);
+          setBureauFilter(bureauParam);
+        }
       }
     } catch {
       // ignore
     }
-  }, []);
+  }, [role]);
+
+  // Ensure officer's bureau filter is immutably synchronized whenever active user changes
+  useEffect(() => {
+    if (role === 'OFFICER' && currentUser?.bureau) {
+      setSelectedBureau(currentUser.bureau);
+      setBureauFilter(currentUser.bureau);
+    }
+  }, [role, currentUser]);
 
   const handleInitFinish = useCallback(() => {
     setIsInitializing(false);
@@ -138,7 +152,12 @@ function DashboardPageContent() {
     if (user?.role === 'OFFICER' && user?.bureau) {
       setSelectedBureau(user.bureau);
       setBureauFilter(user.bureau);
+    } else {
+      setSelectedBureau('all');
+      setBureauFilter('all');
     }
+    // Route each role to their authorized dashboard
+    // If the user requested a specific tab before login, check permission for that tab
     const destination = attemptedTab && canAccessTab(user?.role, attemptedTab) ? attemptedTab : 'dashboard';
     setActiveTab(destination);
     setAttemptedTab(null);
@@ -227,19 +246,23 @@ function DashboardPageContent() {
     setCasesList((prev) => [demoCase, ...prev]);
   };
 
-  // 1. Filter dataset according to all parameters
-  const filteredCases = useMemo(() => {
-    return casesList.filter((c) => {
-      // Officer Role Scope: strictly locked to assigned bureau regardless of filter state
-      if (role === 'OFFICER' && currentUser?.bureau) {
-        const officerBureauObj = BUREAUS.find((b) => b.id === currentUser.bureau);
-        if (officerBureauObj && c.assignedBureau !== officerBureauObj.name && !c.secondaryBureaus?.includes(officerBureauObj.name)) {
-          return false;
-        }
-      }
+  // 0. Base role-scoped complaints dataset (strict role & bureau segregation layer)
+  const roleScopedCases = useMemo(() => {
+    if (role === 'OFFICER' && currentUser?.bureau) {
+      const officerBureauObj = BUREAUS.find((b) => b.id === currentUser.bureau);
+      if (!officerBureauObj) return casesList;
+      return casesList.filter(
+        (c) => c.assignedBureau === officerBureauObj.name || c.secondaryBureaus?.includes(officerBureauObj.name)
+      );
+    }
+    return casesList;
+  }, [casesList, role, currentUser]);
 
-      // Bureau Filter
-      if (bureauFilter !== 'all') {
+  // 1. Filter dataset according to all parameters on top of roleScopedCases
+  const filteredCases = useMemo(() => {
+    return roleScopedCases.filter((c) => {
+      // Bureau Filter (only applied for ADMIN and VIEWER; OFFICER is already scoped to assigned bureau)
+      if (role !== 'OFFICER' && bureauFilter !== 'all') {
         const bureauObj = BUREAUS.find((b) => b.id === bureauFilter);
         if (bureauObj && c.assignedBureau !== bureauObj.name && !c.secondaryBureaus?.includes(bureauObj.name)) {
           return false;
@@ -288,7 +311,7 @@ function DashboardPageContent() {
 
       return true;
     });
-  }, [casesList, bureauFilter, statusFilter, priorityFilter, categoryFilter, searchQuery, dateFrom, dateTo]);
+  }, [roleScopedCases, bureauFilter, statusFilter, priorityFilter, categoryFilter, searchQuery, dateFrom, dateTo, role]);
 
   // 2. Sort filtered cases
   const sortedCases = useMemo(() => {
@@ -424,10 +447,25 @@ function DashboardPageContent() {
         <ReportsAndAnalyticsView onInspectCase={(c) => setSelectedCase(c)} />
       ) : activeTab === 'user_management' ? (
         /* 9. Institutional User & Role Administration (ADMIN Only) */
-        <UserManagementView />
+        <UserManagementView onNavigateDashboard={() => setActiveTab('dashboard')} />
+      ) : activeTab === 'pgrc' ? (
+        /* 10. PGRC Portal */
+        <PgrcPortalView onNavigateDashboard={() => setActiveTab('dashboard')} />
+      ) : activeTab === 'profile' ? (
+        /* 11. User Profile & System Credentials */
+        <UserProfileView onNavigateDashboard={() => setActiveTab('dashboard')} />
       ) : (
         /* Main Dashboard & Complaints View */
         <>
+          {/* Role-Specific Dashboard Hub Banner (Admin / Bureau Officer / Viewer) */}
+          <RoleDashboardBanner
+            onNavigateTab={handleNavigateTab}
+            onSelectStatus={(status) => {
+              setStatusFilter(status);
+              setCurrentPage(1);
+            }}
+          />
+
           {/* Demonstration Dataset Banner */}
           {IS_DEMO_DATA && (
             <div className={styles.demoBanner} role="status">
@@ -441,9 +479,9 @@ function DashboardPageContent() {
             </div>
           )}
 
-          {/* 1. Summary Cards (Dynamically computed from active dataset) */}
+          {/* 1. Summary Cards (Dynamically computed from roleScopedCases) */}
           <SummaryCards
-            cases={casesList}
+            cases={roleScopedCases}
             activeStatusFilter={statusFilter}
             onSelectStatus={(status) => {
               setStatusFilter(status);
@@ -452,7 +490,7 @@ function DashboardPageContent() {
           />
 
           {/* 2. Analytical Charts Section (Derived from current complaints dataset) */}
-          <ChartsSection cases={filteredCases.length > 0 ? filteredCases : casesList} />
+          <ChartsSection cases={filteredCases.length > 0 ? filteredCases : roleScopedCases} />
 
           {/* 3. Filter and Search Engine */}
           <FiltersToolbar

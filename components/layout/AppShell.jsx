@@ -85,6 +85,7 @@ export function AppShell({
           }}
           isCollapsed={isCollapsed}
           activeTab={activeTab}
+          onSelectTab={onSelectTab}
           selectedBureau={selectedBureau}
           searchQuery={searchQuery}
           onSearchChange={onSearchChange}

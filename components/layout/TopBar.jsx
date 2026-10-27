@@ -11,6 +11,7 @@ export function TopBar({
   onToggleSidebar,
   isCollapsed = false,
   activeTab,
+  onSelectTab,
   selectedBureau,
   searchQuery,
   onSearchChange,
@@ -30,18 +31,46 @@ export function TopBar({
     }
   };
 
-  const pageTitle = {
-    dashboard: 'AICTE Central Command Dashboard',
-    complaints: selectedBureau === 'all' ? 'Institutional Complaints & Case Tracker' : `${currentBureau.name} Dashboard`,
-    institutions: 'Institution 360° Historical Dossier',
-    coordination: 'Cross-Bureau Case Coordination & Joint Inquiries',
-    overlap_review: 'Cross-Bureau Overlap & Duplicate Detection Engine',
-    transfers: 'Inter-Bureau Case Jurisdiction Transfer Register',
-    alerts: 'Priority Escalation & SLA Breach Alerts',
-    reports: 'Governance, Analytical Summaries & SLA Tracking',
-    new_complaint: 'Institutional Grievance Intake & New Petition Docket',
-    user_management: 'Institutional User & Role Administration',
-  }[activeTab] || 'AICTE Bureau360 Portal';
+  const officerBureauName = BUREAUS.find((b) => b.id === currentUser?.bureau)?.name;
+
+  let pageTitle = 'AICTE Bureau360 Portal';
+  if (activeTab === 'dashboard') {
+    if (role === 'ADMIN') {
+      pageTitle = 'Administrator Central Command Dashboard';
+    } else if (role === 'OFFICER') {
+      pageTitle = `Bureau Officer Dashboard — ${officerBureauName || 'Approval Bureau'}`;
+    } else if (role === 'VIEWER') {
+      pageTitle = 'Viewer Statutory Oversight Dashboard (Read-Only)';
+    } else {
+      pageTitle = 'AICTE Central Command Dashboard';
+    }
+  } else if (activeTab === 'complaints') {
+    if (role === 'OFFICER') {
+      pageTitle = `${officerBureauName || 'Approval Bureau'} Complaint Dossiers`;
+    } else {
+      pageTitle = selectedBureau === 'all' ? 'Institutional Complaints & Case Tracker' : `${currentBureau.name} Dashboard`;
+    }
+  } else {
+    pageTitle = {
+      institutions: 'Institution 360° Historical Dossier',
+      coordination: 'Cross-Bureau Case Coordination & Joint Inquiries',
+      overlap_review: 'Cross-Bureau Overlap & Duplicate Detection Engine',
+      transfers: 'Inter-Bureau Case Jurisdiction Transfer Register',
+      alerts: 'Priority Escalation & SLA Breach Alerts',
+      reports: 'Governance, Analytical Summaries & SLA Tracking',
+      new_complaint: 'Institutional Grievance Intake & New Petition Docket',
+      user_management: 'Institutional User & Role Administration',
+      pgrc: 'PGRC Portal — Public Grievance Redressal Cell',
+      profile: 'User Profile & System Credentials',
+    }[activeTab] || 'AICTE Bureau360 Portal';
+  }
+
+  const breadcrumbContext =
+    role === 'OFFICER'
+      ? `${officerBureauName || 'Approval Bureau'} Scoped Workspace • AICTE Cycle 2026-27`
+      : role === 'VIEWER'
+      ? 'Statutory Read-Only Regulatory Oversight • Cycle 2026-27'
+      : 'AICTE HQ • Integrated Grievance Portal • Cycle 2026-27';
 
   return (
     <header className={styles.topBar}>
@@ -60,7 +89,7 @@ export function TopBar({
         <div className={styles.breadcrumbGroup}>
           <h1 className={styles.pageTitle}>{pageTitle}</h1>
           <span className={styles.breadcrumbContext}>
-            AICTE HQ • Integrated Grievance Portal • Cycle 2026-27
+            {breadcrumbContext}
           </span>
         </div>
       </div>
@@ -123,7 +152,21 @@ export function TopBar({
         </button>
 
         {currentUser && (
-          <div className={styles.userProfile} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div
+            className={styles.userProfile}
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
+            onClick={() => onSelectTab?.('profile')}
+            title="View User Profile & Account Details"
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onSelectTab?.('profile');
+              }
+            }}
+            aria-label={`User Profile: ${currentUser.name} (${roleMeta?.label})`}
+          >
             <div
               className={styles.userAvatar}
               style={{
@@ -160,7 +203,10 @@ export function TopBar({
             </div>
             <button
               type="button"
-              onClick={handleSignOut}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSignOut();
+              }}
               className={styles.notificationBtn}
               style={{
                 marginLeft: '4px',

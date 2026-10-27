@@ -17,6 +17,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   XIcon,
+  ExternalLinkIcon,
 } from '../icons/Icons';
 import { BUREAUS } from '../../data/mockData';
 import { useAuth } from '../../services/authContext.js';
@@ -91,7 +92,7 @@ export function Sidebar({
         </div>
 
         <nav className={styles.sidebarNav}>
-          <div className={styles.navSectionLabel}>Core Navigation</div>
+          <div className={styles.navSectionLabel}>Portals</div>
 
           {canAccessTab('landing') && (
             <button
@@ -113,6 +114,29 @@ export function Sidebar({
               </span>
             </button>
           )}
+
+          {canAccessTab('pgrc') && (
+            <button
+              type="button"
+              className={`${styles.navItem} ${activeTab === 'pgrc' ? styles.navItemActive : ''}`}
+              onClick={() => {
+                onSelectTab('pgrc');
+                onClose?.();
+              }}
+              title="Access and monitor grievance cases handled through the PGRC portal."
+              aria-label="PGRC Portal"
+            >
+              <div className={styles.navItemLeft}>
+                <ExternalLinkIcon size={18} />
+                <span>PGRC</span>
+              </div>
+              <span className={styles.navBadge} style={{ background: '#fef3c7', color: '#92400e' }}>
+                Portal
+              </span>
+            </button>
+          )}
+
+          <div className={styles.navSectionLabel}>Core Navigation</div>
 
           {canAccessTab('dashboard') && (
             <button
@@ -297,7 +321,7 @@ export function Sidebar({
             </div>
           </button>
 
-          {canAccessTab('user_management') && (
+          {role === 'ADMIN' && canAccessTab('user_management') && (
             <button
               type="button"
               className={`${styles.navItem} ${activeTab === 'user_management' ? styles.navItemActive : ''}`}
@@ -389,29 +413,50 @@ export function Sidebar({
                   cursor: 'pointer',
                   boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
                 }}
-                title={`${currentUser.name} (${roleMeta.label}) • Click to Sign Out`}
-                onClick={() => onLogout?.()}
+                title={`${currentUser.name} (${roleMeta.label}) • Click to View Profile`}
+                onClick={() => {
+                  onSelectTab('profile');
+                  onClose?.();
+                }}
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    onLogout?.();
+                    onSelectTab('profile');
+                    onClose?.();
                   }
                 }}
-                aria-label={`Signed in as ${currentUser.name}. Click to sign out.`}
+                aria-label={`Signed in as ${currentUser.name}. Click to view profile.`}
               >
                 {currentUser.initials || currentUser.name?.slice(0, 2).toUpperCase()}
               </div>
             ) : (
               <div style={{ marginBottom: '8px', padding: '8px 10px', borderRadius: '8px', background: roleMeta.bgColor, border: `1px solid ${roleMeta.color}22` }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+                  onClick={() => {
+                    onSelectTab('profile');
+                    onClose?.();
+                  }}
+                  title="Click to view user profile"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onSelectTab('profile');
+                      onClose?.();
+                    }
+                  }}
+                  aria-label="View user profile"
+                >
                   <div style={{ width: 30, height: 30, borderRadius: '50%', background: roleMeta.color, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6875rem', fontWeight: 700, flexShrink: 0 }}>
                     {currentUser.initials || currentUser.name?.slice(0, 2).toUpperCase()}
                   </div>
                   <div style={{ overflow: 'hidden' }}>
                     <div style={{ fontSize: '0.75rem', fontWeight: 700, color: roleMeta.color, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{currentUser.name}</div>
-                    <div style={{ fontSize: '0.625rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{roleMeta.label}</div>
+                    <div style={{ fontSize: '0.625rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{roleMeta.label} • View Profile ↗</div>
                   </div>
                 </div>
                 <button

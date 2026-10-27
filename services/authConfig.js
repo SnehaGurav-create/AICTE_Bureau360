@@ -1,4 +1,4 @@
-﻿/**
+/**
  * AICTE Bureau360 — Centralized Role & Permission Configuration
  * SIH 2026 Problem Statement 26264
  *
@@ -71,6 +71,8 @@ export const NAV_VISIBILITY = {
   reports:        ['ADMIN','OFFICER','VIEWER'],
   user_management:['ADMIN'],
   landing:        ['ADMIN','OFFICER','VIEWER'],
+  pgrc:           ['ADMIN','OFFICER','VIEWER'],
+  profile:        ['ADMIN','OFFICER','VIEWER'],
 };
 
 export function canAccessTab(role, tab) {

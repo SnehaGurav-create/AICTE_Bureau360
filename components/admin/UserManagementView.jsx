@@ -18,12 +18,28 @@ import { UsersIcon, ShieldIcon, CheckCircleIcon, AlertTriangleIcon } from '../ic
 import { DEMO_USERS } from '../../services/demoAuthService.js';
 import { ROLE_META, ROLES, ACTIONS } from '../../services/authConfig.js';
 import { useAuth } from '../../services/authContext.js';
+import { AccessDenied } from '../auth/AccessDenied';
 
-export function UserManagementView() {
+export function UserManagementView({ onNavigateDashboard }) {
   const { role } = useAuth();
   const [toastMessage, setToastMessage] = useState('');
 
+  // Strict page-level authorization check: Only ADMIN role can access User Management
+  if (role !== ROLES.ADMIN) {
+    return (
+      <AccessDenied
+        attemptedTab="Institutional User & Role Administration"
+        onGoToDashboard={onNavigateDashboard}
+      />
+    );
+  }
+
   const handleAdminAction = (actionName) => {
+    // Defense-in-depth: Verify role before executing any administrative handler
+    if (role !== ROLES.ADMIN) {
+      setToastMessage('Access Denied: Only Administrator may perform administrative user actions.');
+      return;
+    }
     setToastMessage(`Administrative action "${actionName}" is simulated in demo mode. Target endpoint POST /api/v1/admin/users is pending backend integration.`);
     setTimeout(() => setToastMessage(''), 5000);
   };
