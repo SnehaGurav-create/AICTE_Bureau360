@@ -1,0 +1,932 @@
+openapi: '3.0.3'
+info:
+  title: AICTE Bureau360 API
+  version: 1.0.0
+  description: |
+    Integrated complaint tracking and institution monitoring dashboard for AICTE.
+    Built for Smart India Hackathon (SIH26264).
+  contact:
+    name: Bureau360 Team
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Local development
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: Returns API and database status.
+      tags: [System]
+      responses:
+        '200':
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        example: ok
+                      timestamp:
+                        type: string
+                        format: date-time
+                      database:
+                        type: string
+                        example: connected
+        '503':
+          description: Database unreachable
+
+  /meta:
+    get:
+      summary: Get all reference data
+      description: Returns categories, statuses, priorities, sources, bureaus, regions, roles, and status transition map.
+      tags: [Meta]
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: All reference data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+
+  /institutions:
+    get:
+      summary: List institutions
+      tags: [Institutions]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: q
+          in: query
+          schema: { type: string }
+          description: Fuzzy name search or AICTE ID prefix
+        - name: state
+          in: query
+          schema: { type: string }
+        - name: region_id
+          in: query
+          schema: { type: integer }
+        - name: status
+          in: query
+          schema: { type: string, enum: [ACTIVE, CLOSED, SUSPENDED, WITHDRAWN] }
+        - name: institution_type
+          in: query
+          schema: { type: string }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20, maximum: 100 }
+        - name: sort
+          in: query
+          schema: { type: string, enum: [name, aicte_id, state, created_at], default: name }
+        - name: order
+          in: query
+          schema: { type: string, enum: [asc, desc], default: asc }
+      responses:
+        '200':
+          description: Paginated list of institutions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Institution'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+    post:
+      summary: Create institution
+      tags: [Institutions]
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInstitution'
+      responses:
+        '201':
+          description: Institution created
+        '409':
+          description: Duplicate AICTE ID
+
+  /institutions/search:
+    get:
+      summary: Autocomplete search
+      description: Returns top 10 matches by name similarity or AICTE ID prefix.
+      tags: [Institutions]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Autocomplete results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: string, format: uuid }
+                        aicte_id: { type: string }
+                        name: { type: string }
+                        city: { type: string }
+                        state: { type: string }
+
+  /institutions/import:
+    post:
+      summary: CSV import (admin)
+      tags: [Institutions]
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Import results with inserted/skipped/error counts
+
+  /institutions/{aicteId}:
+    get:
+      summary: Get institution by AICTE ID
+      tags: [Institutions]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/AicteId'
+      responses:
+        '200':
+          description: Institution detail
+        '404':
+          description: Not found
+    patch:
+      summary: Update institution
+      tags: [Institutions]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/AicteId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateInstitution'
+      responses:
+        '200':
+          description: Updated institution
+        '404':
+          description: Not found
+
+  /institutions/{aicteId}/history:
+    get:
+      summary: Institution change history
+      tags: [Institutions]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/AicteId'
+      responses:
+        '200':
+          description: History entries
+
+  /institutions/{aicteId}/documents:
+    get:
+      summary: List institution documents
+      tags: [Institutions]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/AicteId'
+      responses:
+        '200':
+          description: Document list
+    post:
+      summary: Upload institution documents
+      tags: [Institutions]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/AicteId'
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                doc_category:
+                  type: string
+                  enum: [SUPPORTING, ACTION_TAKEN_REPORT, INSTITUTION_DOC, OTHER]
+                  default: INSTITUTION_DOC
+      responses:
+        '201':
+          description: Documents uploaded
+
+  /complaints:
+    get:
+      summary: List complaints with filters
+      description: Returns complaints visible within the user's scope (ALL, BUREAU, REGION, or ASSIGNED)
+      tags: [Complaints]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: q
+          in: query
+          schema: { type: string }
+          description: Full-text search, complaint_no, or institution name
+        - name: status
+          in: query
+          schema: { type: string }
+        - name: category_id
+          in: query
+          schema: { type: integer }
+        - name: priority
+          in: query
+          schema: { type: string, enum: [LOW, MEDIUM, HIGH, CRITICAL] }
+        - name: aicte_id
+          in: query
+          schema: { type: string }
+        - name: bureau_id
+          in: query
+          schema: { type: integer }
+        - name: assignee_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: from
+          in: query
+          schema: { type: string, format: date }
+          description: received_on >= from
+        - name: to
+          in: query
+          schema: { type: string, format: date }
+          description: received_on <= to
+        - name: overdue
+          in: query
+          schema: { type: boolean }
+          description: sla_due_at < now AND status is open
+        - name: has_overlap
+          in: query
+          schema: { type: boolean }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20, maximum: 100 }
+        - name: sort
+          in: query
+          schema: { type: string, enum: [created_at, updated_at, received_on, priority, status, sla_due_at, complaint_no] }
+        - name: order
+          in: query
+          schema: { type: string, enum: [asc, desc], default: desc }
+      responses:
+        '200':
+          description: Paginated complaint list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Complaint'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+    post:
+      summary: Create a new complaint
+      tags: [Complaints]
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateComplaint'
+      responses:
+        '201':
+          description: Complaint created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Complaint'
+        '404':
+          description: Institution not found
+
+  /complaints/{id}:
+    get:
+      summary: Get complaint detail
+      tags: [Complaints]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ComplaintId'
+      responses:
+        '200':
+          description: Complaint detail with allowed_next_statuses
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Complaint'
+        '404':
+          description: Not found or outside scope
+    patch:
+      summary: Update complaint fields
+      description: Updates title, description, category, priority, or complainant info. Records FIELD_UPDATED action.
+      tags: [Complaints]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ComplaintId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateComplaint'
+      responses:
+        '200':
+          description: Updated complaint
+        '404':
+          description: Not found
+
+  /complaints/{id}/status:
+    patch:
+      summary: Change complaint status
+      description: Validates status transition map and remarks requirements
+      tags: [Complaints]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ComplaintId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [NEW, UNDER_REVIEW, ASSIGNED, IN_PROGRESS, PENDING_INFO, ESCALATED, RESOLVED, CLOSED, REJECTED, REOPENED]
+                remarks:
+                  type: string
+                  description: Required for REJECTED, RESOLVED, CLOSED, REOPENED, ESCALATED
+      responses:
+        '200':
+          description: Status updated
+        '400':
+          description: Invalid transition or missing remarks
+
+  /complaints/{id}/remarks:
+    post:
+      summary: Add a remark (comment)
+      description: Adds a remark without changing status. Can be internal (hidden from other bureaus).
+      tags: [Complaints]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ComplaintId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [remarks]
+              properties:
+                remarks:
+                  type: string
+                  minLength: 1
+                is_internal:
+                  type: boolean
+                  default: false
+      responses:
+        '201':
+          description: Remark added
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ComplaintAction'
+
+  /complaints/{id}/timeline:
+    get:
+      summary: Get complaint timeline (action history)
+      description: Returns actions in chronological order. Filters is_internal actions based on caller's bureau.
+      tags: [Complaints]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ComplaintId'
+      responses:
+        '200':
+          description: Action timeline
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ComplaintAction'
+
+  /complaints/{id}/assign:
+    post:
+      summary: Assign complaint to bureau or officer
+      description: Assigns a complaint to a specific bureau and/or officer. Deactivates previous assignment and logs ASSIGNED action.
+      tags: [Complaints]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ComplaintId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignComplaint'
+      responses:
+        '200':
+          description: Complaint assigned successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Complaint'
+        '400':
+          description: Validation error (e.g. neither bureau nor assignee provided)
+        '404':
+          description: Complaint, bureau, or user not found
+
+  /complaints/{id}/transfer:
+    post:
+      summary: Transfer complaint to another bureau
+      description: Transfers case ownership to a different bureau with required justification reason. Recomputes SLA if target bureau has a specific rule.
+      tags: [Complaints]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ComplaintId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferComplaint'
+      responses:
+        '200':
+          description: Complaint transferred successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Complaint'
+        '400':
+          description: Cannot transfer closed complaint or transfer to same bureau
+        '404':
+          description: Complaint or target bureau not found
+
+  /complaints/{id}/assignments:
+    get:
+      summary: Get assignment history
+      description: Returns chronological history of case assignments and bureau transfers with officer and bureau names.
+      tags: [Complaints]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ComplaintId'
+      responses:
+        '200':
+          description: Assignment history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ComplaintAssignment'
+
+  /complaints/{id}/documents:
+    post:
+      summary: Upload supporting documents
+      description: Uploads files (PDF, JPG, PNG up to 10MB each, max 5 per request). Computes and stores SHA-256 checksum.
+      tags: [Documents]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ComplaintId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [files]
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                doc_category:
+                  type: string
+                  enum: [SUPPORTING, ACTION_TAKEN_REPORT, INSTITUTION_DOC, OTHER]
+                  default: SUPPORTING
+      responses:
+        '201':
+          description: Documents uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ComplaintDocument'
+        '400':
+          description: No files uploaded or disallowed file type
+    get:
+      summary: List documents for complaint
+      description: Returns all documents attached to the complaint.
+      tags: [Documents]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ComplaintId'
+      responses:
+        '200':
+          description: List of documents
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ComplaintDocument'
+
+  /complaints/{id}/documents/{documentId}:
+    get:
+      summary: Get document metadata
+      description: Returns metadata of a specific complaint document.
+      tags: [Documents]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ComplaintId'
+        - $ref: '#/components/parameters/DocumentId'
+      responses:
+        '200':
+          description: Document metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ComplaintDocument'
+        '404':
+          description: Complaint or document not found
+
+  /complaints/{id}/documents/{documentId}/download:
+    get:
+      summary: Download document file
+      description: Streams the document binary file with Content-Disposition attachment header.
+      tags: [Documents]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ComplaintId'
+        - $ref: '#/components/parameters/DocumentId'
+      responses:
+        '200':
+          description: File download stream
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: File not found
+
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: VALIDATION_ERROR
+            message:
+              type: string
+              example: Request validation failed
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                  message:
+                    type: string
+
+    PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 150
+        total_pages:
+          type: integer
+          example: 8
+
+    Institution:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        aicte_id: { type: string, example: 'AICTE-2024-001' }
+        name: { type: string, example: 'Delhi Technical University' }
+        institution_type: { type: string, example: 'Engineering' }
+        status: { type: string, enum: [ACTIVE, CLOSED, SUSPENDED, WITHDRAWN] }
+        address_line: { type: string }
+        city: { type: string }
+        district: { type: string }
+        state: { type: string }
+        pincode: { type: string }
+        region_id: { type: integer }
+        region_name: { type: string }
+        head_name: { type: string }
+        email: { type: string, format: email }
+        phone: { type: string }
+        website: { type: string }
+        established_year: { type: integer }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    CreateInstitution:
+      type: object
+      required: [aicte_id, name]
+      properties:
+        aicte_id: { type: string }
+        name: { type: string }
+        institution_type: { type: string }
+        status: { type: string, enum: [ACTIVE, CLOSED, SUSPENDED, WITHDRAWN], default: ACTIVE }
+        address_line: { type: string }
+        city: { type: string }
+        district: { type: string }
+        state: { type: string }
+        pincode: { type: string }
+        region_id: { type: integer }
+        head_name: { type: string }
+        email: { type: string, format: email }
+        phone: { type: string }
+        website: { type: string }
+        established_year: { type: integer }
+
+    UpdateInstitution:
+      type: object
+      properties:
+        name: { type: string }
+        institution_type: { type: string }
+        status: { type: string, enum: [ACTIVE, CLOSED, SUSPENDED, WITHDRAWN] }
+        address_line: { type: string }
+        city: { type: string }
+        district: { type: string }
+        state: { type: string }
+        pincode: { type: string }
+        region_id: { type: integer }
+        head_name: { type: string }
+        email: { type: string, format: email }
+        phone: { type: string }
+        website: { type: string }
+        established_year: { type: integer }
+
+    Complaint:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        complaint_no: { type: string, example: 'CMP-2024-000123' }
+        institution_id: { type: string, format: uuid }
+        institution_name: { type: string }
+        aicte_id: { type: string }
+        category_id: { type: integer }
+        category_name: { type: string }
+        title: { type: string }
+        description: { type: string }
+        priority: { type: string, enum: [LOW, MEDIUM, HIGH, CRITICAL] }
+        status: { type: string, enum: [NEW, UNDER_REVIEW, ASSIGNED, IN_PROGRESS, PENDING_INFO, ESCALATED, RESOLVED, CLOSED, REJECTED, REOPENED] }
+        source: { type: string, enum: [PORTAL, EMAIL, LETTER, PHONE, PG_PORTAL, OTHER] }
+        external_ref_no: { type: string }
+        complainant_name: { type: string }
+        complainant_email: { type: string, format: email }
+        complainant_phone: { type: string }
+        is_anonymous: { type: boolean }
+        received_on: { type: string, format: date }
+        current_bureau_id: { type: integer }
+        bureau_name: { type: string }
+        current_assignee_id: { type: string, format: uuid }
+        assignee_name: { type: string }
+        sla_due_at: { type: string, format: date-time }
+        first_response_at: { type: string, format: date-time }
+        resolved_at: { type: string, format: date-time }
+        closed_at: { type: string, format: date-time }
+        has_overlap: { type: boolean }
+        document_count: { type: integer }
+        allowed_next_statuses: { type: array, items: { type: string } }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    CreateComplaint:
+      type: object
+      required: [aicte_id, category_id, title, description]
+      properties:
+        aicte_id: { type: string, description: 'Institution AICTE ID' }
+        category_id: { type: integer }
+        title: { type: string, minLength: 3, maxLength: 500 }
+        description: { type: string, minLength: 10 }
+        priority: { type: string, enum: [LOW, MEDIUM, HIGH, CRITICAL], default: MEDIUM }
+        source: { type: string, enum: [PORTAL, EMAIL, LETTER, PHONE, PG_PORTAL, OTHER], default: PORTAL }
+        external_ref_no: { type: string }
+        complainant_name: { type: string }
+        complainant_email: { type: string, format: email }
+        complainant_phone: { type: string }
+        is_anonymous: { type: boolean, default: false }
+        received_on: { type: string, format: date, description: 'Defaults to today' }
+        bureau_id: { type: integer, description: 'If provided, creates first assignment and sets status to ASSIGNED' }
+
+    UpdateComplaint:
+      type: object
+      properties:
+        title: { type: string, minLength: 3, maxLength: 500 }
+        description: { type: string, minLength: 10 }
+        category_id: { type: integer }
+        priority: { type: string, enum: [LOW, MEDIUM, HIGH, CRITICAL] }
+        complainant_name: { type: string }
+        complainant_email: { type: string, format: email }
+        complainant_phone: { type: string }
+
+    ComplaintAction:
+      type: object
+      properties:
+        id: { type: integer }
+        complaint_id: { type: string, format: uuid }
+        action_type: { type: string, enum: [CREATED, STATUS_CHANGED, ASSIGNED, TRANSFERRED, ESCALATED, REMARK, DOCUMENT_ADDED, FIELD_UPDATED, OVERLAP_LINKED, REOPENED] }
+        from_status: { type: string }
+        to_status: { type: string }
+        remarks: { type: string }
+        is_internal: { type: boolean }
+        performed_by: { type: string, format: uuid }
+        performer_name: { type: string }
+        performed_by_bureau: { type: integer }
+        performer_bureau_name: { type: string }
+        metadata: { type: object }
+        created_at: { type: string, format: date-time }
+
+    AssignComplaint:
+      type: object
+      properties:
+        bureau_id: { type: integer, example: 1 }
+        to_bureau_id: { type: integer, example: 1 }
+        assignee_id: { type: string, format: uuid }
+        to_user_id: { type: string, format: uuid }
+        reason: { type: string, example: 'Assigning to Regional Officer for field verification' }
+
+    TransferComplaint:
+      type: object
+      required: [to_bureau_id, reason]
+      properties:
+        to_bureau_id: { type: integer, example: 2 }
+        bureau_id: { type: integer, example: 2 }
+        assignee_id: { type: string, format: uuid }
+        to_user_id: { type: string, format: uuid }
+        reason: { type: string, example: 'Case belongs to Approval Bureau jurisdiction' }
+
+    ComplaintAssignment:
+      type: object
+      properties:
+        id: { type: integer }
+        complaint_id: { type: string, format: uuid }
+        kind: { type: string, enum: [ASSIGNMENT, TRANSFER, ESCALATION] }
+        from_bureau_id: { type: integer }
+        from_bureau_name: { type: string }
+        from_bureau_code: { type: string }
+        to_bureau_id: { type: integer }
+        to_bureau_name: { type: string }
+        to_bureau_code: { type: string }
+        from_user_id: { type: string, format: uuid }
+        from_user_name: { type: string }
+        to_user_id: { type: string, format: uuid }
+        to_user_name: { type: string }
+        assigned_by: { type: string, format: uuid }
+        assigned_by_name: { type: string }
+        reason: { type: string }
+        is_current: { type: boolean }
+        assigned_at: { type: string, format: date-time }
+
+    ComplaintDocument:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        complaint_id: { type: string, format: uuid }
+        action_id: { type: integer }
+        doc_category: { type: string, enum: [SUPPORTING, ACTION_TAKEN_REPORT, INSTITUTION_DOC, OTHER] }
+        file_name: { type: string, example: 'evidence.pdf' }
+        storage_key: { type: string }
+        mime_type: { type: string, example: 'application/pdf' }
+        size_bytes: { type: integer, example: 1048576 }
+        sha256: { type: string, example: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855' }
+        uploaded_by: { type: string, format: uuid }
+        uploaded_by_name: { type: string }
+        created_at: { type: string, format: date-time }
+
+  parameters:
+    AicteId:
+      name: aicteId
+      in: path
+      required: true
+      schema: { type: string }
+      description: The unique AICTE ID of the institution
+
+    ComplaintId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+      description: Complaint UUID
+
+    DocumentId:
+      name: documentId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+      description: Document UUID
+
+
+tags:
+  - name: System
+    description: Health checks and system info
+  - name: Auth
+    description: Authentication and token management
+  - name: Users
+    description: User management (RBAC)
+  - name: Meta
+    description: Dropdown values and configuration
+  - name: Institutions
+    description: Institution profiles
+  - name: Complaints
+    description: Complaint CRUD, status, assignments
+  - name: Documents
+    description: File uploads and downloads
+  - name: Overlaps
+    description: Overlap detection and review
+  - name: SLA
+    description: SLA rule management
+  - name: Notifications
+    description: In-app and email notifications
+  - name: Dashboard
+    description: Statistics and reports
+  - name: Audit
+    description: Audit log access
