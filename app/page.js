@@ -42,16 +42,6 @@ function DashboardPageContent() {
   const { currentUser, isAuthenticated, role, signOut, can } = useAuth();
   const [activeTab, setActiveTab] = useState('landing');
   const [attemptedTab, setAttemptedTab] = useState(null);
-  const [selectedBureau, setSelectedBureau] = useState('all');
-
-  // Automatically scope to assigned bureau for Officer role
-  useEffect(() => {
-    if (role === 'OFFICER' && currentUser?.bureau) {
-      setSelectedBureau(currentUser.bureau);
-      setBureauFilter(currentUser.bureau);
-    }
-  }, [role, currentUser]);
-
   // Institution Selection State
   const [selectedInstitution, setSelectedInstitution] = useState(null);
 
@@ -62,6 +52,7 @@ function DashboardPageContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [bureauFilter, setBureauFilter] = useState('all');
+  const [selectedBureau, setSelectedBureau] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('ALL');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [dateFrom, setDateFrom] = useState('');
@@ -81,6 +72,34 @@ function DashboardPageContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(false);
 
+  // Northern Region states mapping for Regional Office scope
+  const NORTHERN_REGION_STATES = useMemo(() => [
+    'Uttar Pradesh',
+    'Punjab',
+    'Rajasthan',
+    'Uttarakhand',
+    'Delhi',
+    'Assam',
+    'Bihar',
+  ], []);
+
+  // Automatically scope bureau and region based on the active official role
+  useEffect(() => {
+    if (role === 'REGULATION_BUREAU') {
+      setSelectedBureau('approval');
+      setBureauFilter('approval');
+    } else if (role === 'PGRC') {
+      setSelectedBureau('grievance');
+      setBureauFilter('grievance');
+    } else if (role === 'REGIONAL_OFFICE') {
+      setSelectedBureau('regional');
+      setBureauFilter('regional');
+    } else if (role === 'AICTE_ADMINISTRATOR' || role === 'SENIOR_MANAGEMENT') {
+      setSelectedBureau('all');
+      setBureauFilter('all');
+    }
+  }, [role, currentUser]);
+
   // Check URL query parameters for direct tab navigation
   useEffect(() => {
     try {
@@ -91,8 +110,8 @@ function DashboardPageContent() {
       }
       const bureauParam = params.get('bureau');
       if (bureauParam) {
-        // Only non-officer roles can initialize bureau filter from URL
-        if (role !== 'OFFICER') {
+        // Only organization-wide roles can initialize bureau filter from URL
+        if (role === 'AICTE_ADMINISTRATOR' || role === 'SENIOR_MANAGEMENT') {
           setSelectedBureau(bureauParam);
           setBureauFilter(bureauParam);
         }
@@ -101,14 +120,6 @@ function DashboardPageContent() {
       // ignore
     }
   }, [role]);
-
-  // Ensure officer's bureau filter is immutably synchronized whenever active user changes
-  useEffect(() => {
-    if (role === 'OFFICER' && currentUser?.bureau) {
-      setSelectedBureau(currentUser.bureau);
-      setBureauFilter(currentUser.bureau);
-    }
-  }, [role, currentUser]);
 
   const handleInitFinish = useCallback(() => {
     setIsInitializing(false);
@@ -121,9 +132,11 @@ function DashboardPageContent() {
 
   // Sync sidebar bureau selection with toolbar bureau filter
   const handleSelectBureauFromSidebar = (bureauId) => {
-    if (role === 'OFFICER' && currentUser?.bureau && bureauId !== currentUser.bureau) {
-      return; // Officer cannot switch to another bureau
-    }
+    // Jurisdiction guard: Scoped roles cannot select outside their assignment
+    if (role === 'REGULATION_BUREAU' && bureauId !== 'approval') return;
+    if (role === 'PGRC' && bureauId !== 'grievance') return;
+    if (role === 'REGIONAL_OFFICE') return;
+
     setSelectedBureau(bureauId);
     setBureauFilter(bureauId);
     setSelectedCase(null);
@@ -149,15 +162,20 @@ function DashboardPageContent() {
   };
 
   const handleLoginSuccess = (user) => {
-    if (user?.role === 'OFFICER' && user?.bureau) {
-      setSelectedBureau(user.bureau);
-      setBureauFilter(user.bureau);
+    if (user?.role === 'REGULATION_BUREAU') {
+      setSelectedBureau('approval');
+      setBureauFilter('approval');
+    } else if (user?.role === 'PGRC') {
+      setSelectedBureau('grievance');
+      setBureauFilter('grievance');
+    } else if (user?.role === 'REGIONAL_OFFICE') {
+      setSelectedBureau('regional');
+      setBureauFilter('regional');
     } else {
       setSelectedBureau('all');
       setBureauFilter('all');
     }
     // Route each role to their authorized dashboard
-    // If the user requested a specific tab before login, check permission for that tab
     const destination = attemptedTab && canAccessTab(user?.role, attemptedTab) ? attemptedTab : 'dashboard';
     setActiveTab(destination);
     setAttemptedTab(null);
@@ -174,16 +192,24 @@ function DashboardPageContent() {
   };
 
   const handleBureauChangeFromToolbar = (bureauId) => {
-    if (role === 'OFFICER' && currentUser?.bureau && bureauId !== currentUser.bureau) {
-      return; // Officer cannot switch to another bureau
-    }
+    if (role === 'REGULATION_BUREAU' && bureauId !== 'approval') return;
+    if (role === 'PGRC' && bureauId !== 'grievance') return;
+    if (role === 'REGIONAL_OFFICE') return;
+
     setBureauFilter(bureauId);
     setSelectedBureau(bureauId);
     setCurrentPage(1);
   };
 
   const handleResetFilters = () => {
-    const defaultBureau = role === 'OFFICER' && currentUser?.bureau ? currentUser.bureau : 'all';
+    const defaultBureau =
+      role === 'REGULATION_BUREAU'
+        ? 'approval'
+        : role === 'PGRC'
+        ? 'grievance'
+        : role === 'REGIONAL_OFFICE'
+        ? 'regional'
+        : 'all';
     setSearchQuery('');
     setStatusFilter('ALL');
     setBureauFilter(defaultBureau);
@@ -246,23 +272,30 @@ function DashboardPageContent() {
     setCasesList((prev) => [demoCase, ...prev]);
   };
 
-  // 0. Base role-scoped complaints dataset (strict role & bureau segregation layer)
+  // 0. Base role-scoped complaints dataset (strict segregation layer for five official roles)
   const roleScopedCases = useMemo(() => {
-    if (role === 'OFFICER' && currentUser?.bureau) {
-      const officerBureauObj = BUREAUS.find((b) => b.id === currentUser.bureau);
-      if (!officerBureauObj) return casesList;
+    if (role === 'REGULATION_BUREAU') {
       return casesList.filter(
-        (c) => c.assignedBureau === officerBureauObj.name || c.secondaryBureaus?.includes(officerBureauObj.name)
+        (c) => c.assignedBureau === 'Approval Bureau' || c.secondaryBureaus?.includes('Approval Bureau')
       );
     }
+    if (role === 'PGRC') {
+      return casesList.filter(
+        (c) => c.assignedBureau === 'Grievance Redressal Cell' || c.secondaryBureaus?.includes('Grievance Redressal Cell')
+      );
+    }
+    if (role === 'REGIONAL_OFFICE') {
+      return casesList.filter((c) => NORTHERN_REGION_STATES.includes(c.state));
+    }
+    // AICTE_ADMINISTRATOR and SENIOR_MANAGEMENT see all organization-wide cases
     return casesList;
-  }, [casesList, role, currentUser]);
+  }, [casesList, role, NORTHERN_REGION_STATES]);
 
   // 1. Filter dataset according to all parameters on top of roleScopedCases
   const filteredCases = useMemo(() => {
     return roleScopedCases.filter((c) => {
-      // Bureau Filter (only applied for ADMIN and VIEWER; OFFICER is already scoped to assigned bureau)
-      if (role !== 'OFFICER' && bureauFilter !== 'all') {
+      // Bureau Filter (only applied for AICTE_ADMINISTRATOR and SENIOR_MANAGEMENT; scoped roles are locked)
+      if ((role === 'AICTE_ADMINISTRATOR' || role === 'SENIOR_MANAGEMENT') && bureauFilter !== 'all') {
         const bureauObj = BUREAUS.find((b) => b.id === bureauFilter);
         if (bureauObj && c.assignedBureau !== bureauObj.name && !c.secondaryBureaus?.includes(bureauObj.name)) {
           return false;
@@ -457,7 +490,7 @@ function DashboardPageContent() {
       ) : (
         /* Main Dashboard & Complaints View */
         <>
-          {/* Role-Specific Dashboard Hub Banner (Admin / Bureau Officer / Viewer) */}
+          {/* Role-Specific Portal Hub Banner (Administrator / RB / PGRC / Regional Office / Senior Management) */}
           <RoleDashboardBanner
             onNavigateTab={handleNavigateTab}
             onSelectStatus={(status) => {
@@ -506,7 +539,15 @@ function DashboardPageContent() {
             }}
             bureauFilter={bureauFilter}
             onBureauChange={handleBureauChangeFromToolbar}
-            officerBureau={role === 'OFFICER' ? currentUser?.bureau : undefined}
+            officerBureau={
+              role === 'REGULATION_BUREAU'
+                ? 'approval'
+                : role === 'PGRC'
+                ? 'grievance'
+                : role === 'REGIONAL_OFFICE'
+                ? 'regional'
+                : undefined
+            }
             priorityFilter={priorityFilter}
             onPriorityChange={(val) => {
               setPriorityFilter(val);

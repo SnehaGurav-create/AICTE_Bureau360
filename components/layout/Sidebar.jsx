@@ -159,24 +159,18 @@ export function Sidebar({
           {canAccessTab('complaints') && (
             <button
               type="button"
-              className={`${styles.navItem} ${activeTab === 'complaints' && (selectedBureau === 'all' || (role === 'OFFICER' && selectedBureau === currentUser?.bureau)) ? styles.navItemActive : ''}`}
+              className={`${styles.navItem} ${activeTab === 'complaints' ? styles.navItemActive : ''}`}
               onClick={() => {
                 onSelectTab('complaints');
-                onSelectBureau(role === 'OFFICER' && currentUser?.bureau ? currentUser.bureau : 'all');
                 onClose?.();
               }}
-              title={`Complaints (${role === 'OFFICER' && currentUser?.bureau ? (BUREAUS.find((b) => b.id === currentUser.bureau)?.count || 5) : 148})`}
+              title="Complaints Register"
               aria-label="Complaints"
             >
               <div className={styles.navItemLeft}>
                 <FileTextIcon size={18} />
                 <span>Complaints</span>
               </div>
-              <span className={styles.navBadge}>
-                {role === 'OFFICER' && currentUser?.bureau
-                  ? (BUREAUS.find((b) => b.id === currentUser.bureau)?.count || 5)
-                  : 148}
-              </span>
             </button>
           )}
 
@@ -321,7 +315,7 @@ export function Sidebar({
             </div>
           </button>
 
-          {role === 'ADMIN' && canAccessTab('user_management') && (
+          {role === 'AICTE_ADMINISTRATOR' && canAccessTab('user_management') && (
             <button
               type="button"
               className={`${styles.navItem} ${activeTab === 'user_management' ? styles.navItemActive : ''}`}
@@ -329,7 +323,7 @@ export function Sidebar({
                 onSelectTab('user_management');
                 onClose?.();
               }}
-              title="Institutional User & Role Administration (Admin)"
+              title="Institutional User & Role Administration (Administrator Only)"
               aria-label="User Management"
             >
               <div className={styles.navItemLeft}>
@@ -343,13 +337,23 @@ export function Sidebar({
           )}
 
           <div className={styles.navSectionLabel}>
-            {role === 'OFFICER' ? 'AICTE Bureau Scope (Officer Locked)' : 'Filter By AICTE Bureau'}
+            {role === 'REGULATION_BUREAU'
+              ? 'Regulation Bureau Scope (Locked)'
+              : role === 'PGRC'
+              ? 'PGRC Cell Scope (Locked)'
+              : role === 'REGIONAL_OFFICE'
+              ? 'Northern Region (Jurisdiction Locked)'
+              : 'Filter By AICTE Bureau'}
           </div>
 
           {BUREAUS.filter((b) => b.id !== 'all').map((bureau) => {
-            const isOfficer = role === 'OFFICER';
-            const isAssigned = isOfficer && currentUser?.bureau === bureau.id;
-            const isRestricted = isOfficer && !isAssigned;
+            const isAssigned =
+              (role === 'REGULATION_BUREAU' && bureau.id === 'approval') ||
+              (role === 'PGRC' && bureau.id === 'grievance');
+            const isRestricted =
+              (role === 'REGULATION_BUREAU' && bureau.id !== 'approval') ||
+              (role === 'PGRC' && bureau.id !== 'grievance') ||
+              (role === 'REGIONAL_OFFICE');
 
             return (
               <button
@@ -366,7 +370,7 @@ export function Sidebar({
                 style={isRestricted ? { opacity: 0.35, cursor: 'not-allowed' } : undefined}
                 title={
                   isRestricted
-                    ? `Restricted: Officer access is scoped to ${BUREAUS.find((b) => b.id === currentUser?.bureau)?.name || 'assigned bureau'}`
+                    ? `Restricted: Access is scoped to authorized jurisdiction.`
                     : isAssigned
                     ? `${bureau.name} (Assigned Scope)`
                     : `${bureau.name} (${bureau.count} cases)`

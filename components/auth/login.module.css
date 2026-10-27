@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    AICTE Bureau360 — Login Page Styles
    Light-themed, matching the landing page visual system
    ============================================================ */
@@ -221,7 +221,7 @@
 }
 .quickLoginGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   gap: 0.5rem;
 }
 .quickRoleBtn {

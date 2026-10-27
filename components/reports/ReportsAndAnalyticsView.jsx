@@ -164,7 +164,7 @@ export function ReportsAndAnalyticsView({ onInspectCase }) {
               </>
             ) : (
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                🔒 Read-only mode (Viewer): Export actions disabled
+                🔒 Read-only access: Export actions disabled for current role
               </span>
             )}
           </div>

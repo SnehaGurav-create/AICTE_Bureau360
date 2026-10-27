@@ -361,7 +361,7 @@ export function ComplaintDetailView({ complaint, onBack, onSelectRelatedCase, on
 
           {!canUpdateStatus && (
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '6px' }}>
-              🔒 Read-only access: Relationship classification controls are disabled for Viewer role.
+              🔒 Read-only access: Relationship classification controls are disabled for current role.
             </div>
           )}
 

@@ -24,8 +24,8 @@ export function UserManagementView({ onNavigateDashboard }) {
   const { role } = useAuth();
   const [toastMessage, setToastMessage] = useState('');
 
-  // Strict page-level authorization check: Only ADMIN role can access User Management
-  if (role !== ROLES.ADMIN) {
+  // Strict page-level authorization check: Only AICTE_ADMINISTRATOR role can access User Management
+  if (role !== ROLES.AICTE_ADMINISTRATOR) {
     return (
       <AccessDenied
         attemptedTab="Institutional User & Role Administration"
@@ -36,8 +36,8 @@ export function UserManagementView({ onNavigateDashboard }) {
 
   const handleAdminAction = (actionName) => {
     // Defense-in-depth: Verify role before executing any administrative handler
-    if (role !== ROLES.ADMIN) {
-      setToastMessage('Access Denied: Only Administrator may perform administrative user actions.');
+    if (role !== ROLES.AICTE_ADMINISTRATOR) {
+      setToastMessage('Access Denied: Only AICTE Administrator may perform administrative user actions.');
       return;
     }
     setToastMessage(`Administrative action "${actionName}" is simulated in demo mode. Target endpoint POST /api/v1/admin/users is pending backend integration.`);
@@ -189,10 +189,12 @@ export function UserManagementView({ onNavigateDashboard }) {
                       </td>
 
                       <td className={styles.td}>
-                        {user.bureau ? (
-                          <Badge variant="warning">Scoped: {user.bureau}</Badge>
+                        {user.region ? (
+                          <Badge variant="info">Region: {user.region}</Badge>
+                        ) : user.bureau ? (
+                          <Badge variant="warning">Bureau: {user.bureau}</Badge>
                         ) : (
-                          <Badge variant="neutral">All Bureaus (Organization-wide)</Badge>
+                          <Badge variant="neutral">Organization-wide (All Bureaus)</Badge>
                         )}
                       </td>
 

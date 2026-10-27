@@ -95,7 +95,7 @@ export function UserProfileView({ onNavigateDashboard }) {
               </div>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 <Badge variant="primary">AICTE HQ New Delhi</Badge>
-                <Badge variant={role === 'ADMIN' ? 'warning' : role === 'OFFICER' ? 'success' : 'neutral'}>
+                <Badge variant={roleMeta?.badgeVariant || 'primary'}>
                   {roleMeta?.label || role}
                 </Badge>
                 <span
@@ -163,21 +163,35 @@ export function UserProfileView({ onNavigateDashboard }) {
 
             <div style={{ gridColumn: '1 / -1' }}>
               <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>
-                Jurisdictional Bureau Scope
+                Jurisdictional Bureau / Regional Scope
               </div>
               <div style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <ShieldIcon size={16} />
                 <span>
-                  {role === 'OFFICER' && assignedBureau
-                    ? `${assignedBureau.name} (${assignedBureau.code}) — Scope Locked`
-                    : role === 'ADMIN'
-                    ? 'All AICTE Statutory Bureaus & Administrative Directorates (Unrestricted Oversight)'
-                    : 'All AICTE Bureaus (Read-Only Observer)'}
+                  {role === 'REGULATION_BUREAU'
+                    ? 'Regulation Bureau (Approval Bureau Dockets) — Scope Locked'
+                    : role === 'PGRC'
+                    ? 'Public Grievance Redressal Cell (PGRC) — Grievance Scope Locked'
+                    : role === 'REGIONAL_OFFICE'
+                    ? 'Northern Regional Office (UP, Punjab, Rajasthan, Uttarakhand, Delhi, Assam, Bihar) — Inspection Scope Locked'
+                    : role === 'SENIOR_MANAGEMENT'
+                    ? 'Organization-Wide Statutory Governance (Read-Only Management Oversight)'
+                    : 'All AICTE Statutory Bureaus & Administrative Directorates (Unrestricted Administrative Authority)'}
                 </span>
               </div>
-              {role === 'OFFICER' && assignedBureau && (
+              {role === 'REGULATION_BUREAU' && (
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px', margin: 0 }}>
-                  Officer access is restricted to complaints assigned or co-directed under {assignedBureau.name}.
+                  Regulation Bureau access is restricted to complaints assigned or co-directed under Regulation &amp; Approval Bureau.
+                </p>
+              )}
+              {role === 'PGRC' && (
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px', margin: 0 }}>
+                  PGRC access is restricted to Public Grievance Redressal Cell dockets and potential overlap evaluations.
+                </p>
+              )}
+              {role === 'REGIONAL_OFFICE' && (
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px', margin: 0 }}>
+                  Regional Officer access is restricted to institutions and inspection dockets within Northern Regional jurisdiction.
                 </p>
               )}
             </div>

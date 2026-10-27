@@ -35,18 +35,28 @@ export function TopBar({
 
   let pageTitle = 'AICTE Bureau360 Portal';
   if (activeTab === 'dashboard') {
-    if (role === 'ADMIN') {
-      pageTitle = 'Administrator Central Command Dashboard';
-    } else if (role === 'OFFICER') {
-      pageTitle = `Bureau Officer Dashboard — ${officerBureauName || 'Approval Bureau'}`;
-    } else if (role === 'VIEWER') {
-      pageTitle = 'Viewer Statutory Oversight Dashboard (Read-Only)';
+    if (role === 'AICTE_ADMINISTRATOR') {
+      pageTitle = 'AICTE Administrator Portal — Central Command Dashboard';
+    } else if (role === 'REGULATION_BUREAU') {
+      pageTitle = 'Regulation Bureau (RB) Portal — Regulatory Oversight';
+    } else if (role === 'PGRC') {
+      pageTitle = 'PGRC Portal — Public Grievance Redressal Cell';
+    } else if (role === 'REGIONAL_OFFICE') {
+      pageTitle = 'Regional Office Portal — Northern Regional Jurisdiction';
+    } else if (role === 'SENIOR_MANAGEMENT') {
+      pageTitle = 'Senior Management Portal — Competent Authority Oversight';
     } else {
       pageTitle = 'AICTE Central Command Dashboard';
     }
   } else if (activeTab === 'complaints') {
-    if (role === 'OFFICER') {
-      pageTitle = `${officerBureauName || 'Approval Bureau'} Complaint Dossiers`;
+    if (role === 'REGULATION_BUREAU') {
+      pageTitle = 'Regulation Bureau Assigned Complaint Dossiers';
+    } else if (role === 'PGRC') {
+      pageTitle = 'PGRC Grievance Records & Redressal Register';
+    } else if (role === 'REGIONAL_OFFICE') {
+      pageTitle = 'Northern Regional Office Compliance & Inspection Dockets';
+    } else if (role === 'SENIOR_MANAGEMENT') {
+      pageTitle = 'Organization-Wide Complaint Register (Management View)';
     } else {
       pageTitle = selectedBureau === 'all' ? 'Institutional Complaints & Case Tracker' : `${currentBureau.name} Dashboard`;
     }
@@ -66,10 +76,16 @@ export function TopBar({
   }
 
   const breadcrumbContext =
-    role === 'OFFICER'
-      ? `${officerBureauName || 'Approval Bureau'} Scoped Workspace • AICTE Cycle 2026-27`
-      : role === 'VIEWER'
-      ? 'Statutory Read-Only Regulatory Oversight • Cycle 2026-27'
+    role === 'AICTE_ADMINISTRATOR'
+      ? 'AICTE HQ • Apex Institutional Administration • Cycle 2026-27'
+      : role === 'REGULATION_BUREAU'
+      ? 'Regulation Bureau • AICTE Regulatory Norms • Cycle 2026-27'
+      : role === 'PGRC'
+      ? 'Public Grievance Redressal Cell • Integrated Portal • Cycle 2026-27'
+      : role === 'REGIONAL_OFFICE'
+      ? 'Northern Regional Office (NRO) • Regional Jurisdiction • Cycle 2026-27'
+      : role === 'SENIOR_MANAGEMENT'
+      ? 'Competent Authority • Apex Statutory Governance • Cycle 2026-27'
       : 'AICTE HQ • Integrated Grievance Portal • Cycle 2026-27';
 
   return (

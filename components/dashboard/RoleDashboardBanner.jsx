@@ -1,18 +1,33 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import styles from '../../app/dashboard.module.css';
-import { ShieldIcon, UsersIcon, AlertTriangleIcon, CheckCircleIcon, FileTextIcon, ClockIcon } from '../icons/Icons';
+import {
+  ShieldIcon,
+  UsersIcon,
+  AlertTriangleIcon,
+  CheckCircleIcon,
+  FileTextIcon,
+  ClockIcon,
+  NetworkIcon,
+  BarChartIcon,
+  BuildingIcon,
+} from '../icons/Icons';
 import { useAuth } from '../../services/authContext.js';
 import { ROLE_META, ROLES } from '../../services/authConfig.js';
 import { BUREAUS } from '../../data/mockData';
 
 export function RoleDashboardBanner({ onNavigateTab, onSelectStatus }) {
   const { currentUser, role } = useAuth();
-  const roleMeta = role ? ROLE_META[role] : null;
-  const officerBureauName = BUREAUS.find((b) => b.id === currentUser?.bureau)?.name || 'Assigned Bureau';
+  const [docUploadNotice, setDocUploadNotice] = useState(false);
 
-  if (role === ROLES.ADMIN) {
+  const handleDocPlaceholderClick = () => {
+    setDocUploadNotice(true);
+    setTimeout(() => setDocUploadNotice(false), 5000);
+  };
+
+  // 1. AICTE Administrator Portal Banner
+  if (role === ROLES.AICTE_ADMINISTRATOR) {
     return (
       <div
         style={{
@@ -27,7 +42,7 @@ export function RoleDashboardBanner({ onNavigateTab, onSelectStatus }) {
           marginBottom: 'var(--space-4)',
         }}
         role="region"
-        aria-label="Administrator Dashboard Scope"
+        aria-label="AICTE Administrator Portal Scope"
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
           <div>
@@ -45,7 +60,7 @@ export function RoleDashboardBanner({ onNavigateTab, onSelectStatus }) {
                   border: '1px solid rgba(255, 255, 255, 0.2)',
                 }}
               >
-                ADMINISTRATOR DASHBOARD
+                AICTE ADMINISTRATOR PORTAL
               </span>
               <span
                 style={{
@@ -60,14 +75,14 @@ export function RoleDashboardBanner({ onNavigateTab, onSelectStatus }) {
                   border: '1px solid rgba(217, 99, 22, 0.4)',
                 }}
               >
-                ORGANIZATION-WIDE OVERSIGHT
+                SYSTEM-WIDE COMPLAINT SUMMARY &amp; USER ADMIN
               </span>
             </div>
             <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '6px 0 2px 0', color: '#ffffff' }}>
               Central Command &amp; Apex Administration
             </h2>
             <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', margin: 0, maxWidth: '780px' }}>
-              Executive authority across all 14 AICTE bureaus, 148 active dossiers, cross-cell duplicate clustering, and institutional user administration.
+              Full administrative access across all 14 AICTE bureaus, 18 active dossiers, cross-bureau overlap clustering, SLA rules, and institutional user administration.
             </p>
           </div>
 
@@ -87,7 +102,6 @@ export function RoleDashboardBanner({ onNavigateTab, onSelectStatus }) {
                 fontSize: '0.8125rem',
                 fontWeight: 700,
                 cursor: 'pointer',
-                transition: 'all 0.15s ease',
               }}
               title="Open Institutional User & Role Administration"
             >
@@ -129,15 +143,16 @@ export function RoleDashboardBanner({ onNavigateTab, onSelectStatus }) {
             color: '#cbd5e1',
           }}
         >
-          <span>👤 Officer: <strong>{currentUser?.name || 'Administrator'}</strong> ({currentUser?.designation})</span>
-          <span>🏛️ Scope: <strong>All AICTE Bureaus</strong> (Cross-bureau selector active)</span>
-          <span>🛡️ Permissions: <strong>Full Admin &amp; User Provisioning</strong></span>
+          <span>👤 Administrator: <strong>{currentUser?.name}</strong> ({currentUser?.designation})</span>
+          <span>🏛️ Scope: <strong>Organization-Wide (All Bureaus)</strong></span>
+          <span>🛡️ Authority: <strong>User &amp; Role Management • SLA Configuration</strong></span>
         </div>
       </div>
     );
   }
 
-  if (role === ROLES.OFFICER) {
+  // 2. Regulation Bureau (RB) Portal Banner
+  if (role === ROLES.REGULATION_BUREAU) {
     return (
       <div
         style={{
@@ -152,7 +167,7 @@ export function RoleDashboardBanner({ onNavigateTab, onSelectStatus }) {
           marginBottom: 'var(--space-4)',
         }}
         role="region"
-        aria-label="Bureau Officer Dashboard Scope"
+        aria-label="Regulation Bureau Portal Scope"
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
           <div>
@@ -170,7 +185,7 @@ export function RoleDashboardBanner({ onNavigateTab, onSelectStatus }) {
                   border: '1px solid rgba(255, 255, 255, 0.25)',
                 }}
               >
-                BUREAU OFFICER DASHBOARD
+                REGULATION BUREAU (RB) PORTAL
               </span>
               <span
                 style={{
@@ -184,14 +199,14 @@ export function RoleDashboardBanner({ onNavigateTab, onSelectStatus }) {
                   color: '#166534',
                 }}
               >
-                SCOPED: {officerBureauName.toUpperCase()}
+                SCOPED: REGULATION &amp; APPROVAL CASELOAD
               </span>
             </div>
             <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '6px 0 2px 0', color: '#ffffff' }}>
-              {officerBureauName} Caseload &amp; Operational Oversight
+              Regulation Bureau (RB) Caseload &amp; Compliance Hub
             </h2>
             <p style={{ fontSize: '0.8125rem', color: '#dcfce7', margin: 0, maxWidth: '780px' }}>
-              Operational grievance handling, SLA monitoring, and case jurisdiction assigned to {officerBureauName}. All dashboard metrics, status rings, and case registers are strictly scoped to your bureau assignment.
+              View cases assigned to the Regulation Bureau. Update case status and action history, review related cross-bureau links, record coordination remarks, and monitor statutory deadlines.
             </p>
           </div>
 
@@ -214,7 +229,7 @@ export function RoleDashboardBanner({ onNavigateTab, onSelectStatus }) {
               }}
             >
               <FileTextIcon size={15} />
-              <span>+ Register Complaint</span>
+              <span>+ Register Case</span>
             </button>
             <button
               type="button"
@@ -234,7 +249,7 @@ export function RoleDashboardBanner({ onNavigateTab, onSelectStatus }) {
               }}
             >
               <ClockIcon size={15} />
-              <span>Overdue SLA</span>
+              <span>Upcoming Deadlines</span>
             </button>
           </div>
         </div>
@@ -252,129 +267,415 @@ export function RoleDashboardBanner({ onNavigateTab, onSelectStatus }) {
           }}
         >
           <span>👤 Officer: <strong>{currentUser?.name}</strong> ({currentUser?.designation})</span>
-          <span>🔒 Bureau Scope: <strong>{officerBureauName} Only</strong> (Cross-bureau selector locked)</span>
-          <span>🚫 Access Control: <strong>Administrative User Management is restricted</strong></span>
+          <span>🔒 Jurisdiction: <strong>Regulation Bureau (RB) Assigned Dockets</strong></span>
+          <span>🚫 Access Policy: <strong>No User Management • No Global Configuration</strong></span>
         </div>
       </div>
     );
   }
 
-  // VIEWER role
-  return (
-    <div
-      style={{
-        padding: '18px 22px',
-        background: 'linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%)',
-        borderRadius: 'var(--radius-lg)',
-        color: '#ffffff',
-        boxShadow: '0 4px 16px rgba(30, 64, 175, 0.15)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px',
-        marginBottom: 'var(--space-4)',
-      }}
-      role="region"
-      aria-label="Viewer Dashboard Scope"
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-            <span
-              style={{
-                fontSize: '0.6875rem',
-                fontWeight: 700,
-                letterSpacing: '0.06em',
-                textTransform: 'uppercase',
-                padding: '3px 9px',
-                borderRadius: '999px',
-                backgroundColor: 'rgba(255, 255, 255, 0.18)',
-                color: '#bfdbfe',
-                border: '1px solid rgba(255, 255, 255, 0.25)',
-              }}
-            >
-              VIEWER DASHBOARD
-            </span>
-            <span
-              style={{
-                fontSize: '0.6875rem',
-                fontWeight: 700,
-                letterSpacing: '0.06em',
-                textTransform: 'uppercase',
-                padding: '3px 9px',
-                borderRadius: '999px',
-                backgroundColor: '#eff6ff',
-                color: '#1e40af',
-              }}
-            >
-              READ-ONLY OBSERVER MODE
-            </span>
-          </div>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '6px 0 2px 0', color: '#ffffff' }}>
-            Regulatory &amp; Statutory Oversight Dashboard
-          </h2>
-          <p style={{ fontSize: '0.8125rem', color: '#dbeafe', margin: 0, maxWidth: '780px' }}>
-            Authorized read-only access for ministerial observers and governance auditors. View grievance volumes, institutional patterns, and compliance reports. Mutation actions and user management controls are disabled.
-          </p>
-        </div>
-
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-          <button
-            type="button"
-            onClick={() => onNavigateTab?.('reports')}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '7px 14px',
-              backgroundColor: '#ffffff',
-              color: '#1e40af',
-              border: 'none',
-              borderRadius: 'var(--radius-md)',
-              fontSize: '0.8125rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-            }}
-          >
-            <span>View Reports</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => onNavigateTab?.('overlap_review')}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '7px 14px',
-              backgroundColor: 'rgba(255, 255, 255, 0.18)',
-              color: '#ffffff',
-              border: '1px solid rgba(255, 255, 255, 0.25)',
-              borderRadius: 'var(--radius-md)',
-              fontSize: '0.8125rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            <span>Inspect Overlaps</span>
-          </button>
-        </div>
-      </div>
-
+  // 3. PGRC Portal Banner
+  if (role === ROLES.PGRC) {
+    return (
       <div
         style={{
+          padding: '18px 22px',
+          background: 'linear-gradient(135deg, #7c2d12 0%, #9a3412 100%)',
+          borderRadius: 'var(--radius-lg)',
+          color: '#ffffff',
+          boxShadow: '0 4px 16px rgba(154, 52, 18, 0.18)',
           display: 'flex',
-          alignItems: 'center',
-          gap: '16px',
-          flexWrap: 'wrap',
-          paddingTop: '8px',
-          borderTop: '1px solid rgba(255, 255, 255, 0.15)',
-          fontSize: '0.75rem',
-          color: '#dbeafe',
+          flexDirection: 'column',
+          gap: '12px',
+          marginBottom: 'var(--space-4)',
         }}
+        role="region"
+        aria-label="PGRC Portal Scope"
       >
-        <span>👤 Observer: <strong>{currentUser?.name}</strong> ({currentUser?.designation})</span>
-        <span>🔒 Access Mode: <strong>Read-Only Inspection</strong></span>
-        <span>🚫 Mutation Controls: <strong>Create, edit, transfer, status update &amp; user management disabled</strong></span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span
+                style={{
+                  fontSize: '0.6875rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
+                  padding: '3px 9px',
+                  borderRadius: '999px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.18)',
+                  color: '#fed7aa',
+                  border: '1px solid rgba(255, 255, 255, 0.25)',
+                }}
+              >
+                PGRC PORTAL
+              </span>
+              <span
+                style={{
+                  fontSize: '0.6875rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
+                  padding: '3px 9px',
+                  borderRadius: '999px',
+                  backgroundColor: '#ffedd5',
+                  color: '#9a3412',
+                }}
+              >
+                PUBLIC GRIEVANCE REDRESSAL CELL
+              </span>
+            </div>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '6px 0 2px 0', color: '#ffffff' }}>
+              Public Grievance Redressal Cell (PGRC) Processing Portal
+            </h2>
+            <p style={{ fontSize: '0.8125rem', color: '#ffedd5', margin: 0, maxWidth: '780px' }}>
+              View and process PGRC complaints, track pending and disposed grievances, evaluate potential overlaps with Regulation Bureau, request joint coordination, and record follow-up actions.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <button
+              type="button"
+              onClick={() => onNavigateTab?.('overlap_review')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '7px 14px',
+                backgroundColor: '#ffffff',
+                color: '#9a3412',
+                border: 'none',
+                borderRadius: 'var(--radius-md)',
+                fontSize: '0.8125rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              <AlertTriangleIcon size={15} />
+              <span>Review Potential Overlaps</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigateTab?.('new_complaint')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '7px 14px',
+                backgroundColor: 'rgba(255, 255, 255, 0.18)',
+                color: '#ffffff',
+                border: '1px solid rgba(255, 255, 255, 0.25)',
+                borderRadius: 'var(--radius-md)',
+                fontSize: '0.8125rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              <FileTextIcon size={15} />
+              <span>+ PGRC Intake</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Special Overlap Advisory Requirement */}
+        <div
+          style={{
+            padding: '8px 12px',
+            backgroundColor: 'rgba(0, 0, 0, 0.25)',
+            borderRadius: 'var(--radius-md)',
+            borderLeft: '4px solid #f97316',
+            fontSize: '0.75rem',
+            color: '#ffedd5',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}
+        >
+          <AlertTriangleIcon size={14} style={{ color: '#fdba74', flexShrink: 0 }} />
+          <span>
+            <strong>Mandatory Overlap Protocol:</strong> A potential overlap detected by the correlation engine must NOT automatically be treated as a confirmed duplicate. Review side-by-side evidence before initiating joint inquiries.
+          </span>
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '16px',
+            flexWrap: 'wrap',
+            paddingTop: '6px',
+            borderTop: '1px solid rgba(255, 255, 255, 0.15)',
+            fontSize: '0.75rem',
+            color: '#fed7aa',
+          }}
+        >
+          <span>👤 Officer: <strong>{currentUser?.name}</strong> ({currentUser?.designation})</span>
+          <span>📋 Scope: <strong>Grievance Redressal Cell (PGRC)</strong></span>
+          <span>🚫 Access Policy: <strong>No User Management • No Cross-Bureau Data Exposure</strong></span>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  // 4. Regional Office Portal Banner
+  if (role === ROLES.REGIONAL_OFFICE) {
+    return (
+      <div
+        style={{
+          padding: '18px 22px',
+          background: 'linear-gradient(135deg, #312e81 0%, #3730a3 100%)',
+          borderRadius: 'var(--radius-lg)',
+          color: '#ffffff',
+          boxShadow: '0 4px 16px rgba(49, 46, 129, 0.18)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px',
+          marginBottom: 'var(--space-4)',
+        }}
+        role="region"
+        aria-label="Regional Office Portal Scope"
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span
+                style={{
+                  fontSize: '0.6875rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
+                  padding: '3px 9px',
+                  borderRadius: '999px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.18)',
+                  color: '#c7d2fe',
+                  border: '1px solid rgba(255, 255, 255, 0.25)',
+                }}
+              >
+                REGIONAL OFFICE PORTAL
+              </span>
+              <span
+                style={{
+                  fontSize: '0.6875rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
+                  padding: '3px 9px',
+                  borderRadius: '999px',
+                  backgroundColor: '#e0e7ff',
+                  color: '#3730a3',
+                }}
+              >
+                ASSIGNED: NORTHERN REGIONAL JURISDICTION (NRO)
+              </span>
+            </div>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '6px 0 2px 0', color: '#ffffff' }}>
+              Northern Regional Office (NRO) Verification &amp; Inspection Hub
+            </h2>
+            <p style={{ fontSize: '0.8125rem', color: '#e0e7ff', margin: 0, maxWidth: '780px' }}>
+              View cases relevant to the Northern Region. Track verification and field inspection progress, record inspection remarks, view regional workload summaries, and upload supporting affidavits.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <button
+              type="button"
+              onClick={() => onNavigateTab?.('reports')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '7px 14px',
+                backgroundColor: '#ffffff',
+                color: '#3730a3',
+                border: 'none',
+                borderRadius: 'var(--radius-md)',
+                fontSize: '0.8125rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              <BarChartIcon size={15} />
+              <span>Regional Workload</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleDocPlaceholderClick}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '7px 14px',
+                backgroundColor: 'rgba(255, 255, 255, 0.18)',
+                color: '#ffffff',
+                border: '1px solid rgba(255, 255, 255, 0.25)',
+                borderRadius: 'var(--radius-md)',
+                fontSize: '0.8125rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+              title="Regional Supporting Document Upload (Integration Placeholder)"
+            >
+              <span>+ Upload Inspection Document (Demo)</span>
+            </button>
+          </div>
+        </div>
+
+        {docUploadNotice && (
+          <div
+            style={{
+              padding: '8px 12px',
+              backgroundColor: 'rgba(255, 255, 255, 0.15)',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '0.75rem',
+              color: '#e0e7ff',
+            }}
+          >
+            ℹ️ <strong>Document Upload Integration Placeholder:</strong> Document ingestion endpoint (<code>POST /api/v1/regional/inspections/documents</code>) is pending backend integration. Demo inspection document metadata recorded locally.
+          </div>
+        )}
+
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '16px',
+            flexWrap: 'wrap',
+            paddingTop: '6px',
+            borderTop: '1px solid rgba(255, 255, 255, 0.15)',
+            fontSize: '0.75rem',
+            color: '#c7d2fe',
+          }}
+        >
+          <span>👤 Regional Officer: <strong>{currentUser?.name}</strong> ({currentUser?.designation})</span>
+          <span>📍 Jurisdiction: <strong>Northern Region (UP, Punjab, Rajasthan, Uttarakhand, Delhi, Assam, Bihar)</strong></span>
+          <span>🚫 Access Policy: <strong>No User Management • No Cross-Regional Exposure</strong></span>
+        </div>
+      </div>
+    );
+  }
+
+  // 5. Senior Management / Competent Authority Portal Banner
+  if (role === ROLES.SENIOR_MANAGEMENT) {
+    return (
+      <div
+        style={{
+          padding: '18px 22px',
+          background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
+          borderRadius: 'var(--radius-lg)',
+          color: '#ffffff',
+          boxShadow: '0 4px 16px rgba(15, 23, 42, 0.18)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px',
+          marginBottom: 'var(--space-4)',
+        }}
+        role="region"
+        aria-label="Senior Management Portal Scope"
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span
+                style={{
+                  fontSize: '0.6875rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
+                  padding: '3px 9px',
+                  borderRadius: '999px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                  color: '#94a3b8',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                }}
+              >
+                SENIOR MANAGEMENT PORTAL
+              </span>
+              <span
+                style={{
+                  fontSize: '0.6875rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
+                  padding: '3px 9px',
+                  borderRadius: '999px',
+                  backgroundColor: '#f1f5f9',
+                  color: '#0f172a',
+                }}
+              >
+                COMPETENT AUTHORITY OVERSIGHT (READ-ONLY)
+              </span>
+            </div>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '6px 0 2px 0', color: '#ffffff' }}>
+              Executive Governance, Disposal Trends &amp; Overlap Patterns
+            </h2>
+            <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', margin: 0, maxWidth: '780px' }}>
+              High-level statutory oversight for Competent Authorities. Monitor organization-wide performance KPIs, disposal trends, overdue escalated complaints, recurring overlap patterns, and bureau workload comparisons.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <button
+              type="button"
+              onClick={() => onNavigateTab?.('reports')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '7px 14px',
+                backgroundColor: '#ffffff',
+                color: '#0f172a',
+                border: 'none',
+                borderRadius: 'var(--radius-md)',
+                fontSize: '0.8125rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              <BarChartIcon size={15} />
+              <span>Management Reports</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigateTab?.('overlap_review')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '7px 14px',
+                backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                color: '#ffffff',
+                border: '1px solid rgba(255, 255, 255, 0.25)',
+                borderRadius: 'var(--radius-md)',
+                fontSize: '0.8125rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              <AlertTriangleIcon size={15} />
+              <span>Recurring Overlaps</span>
+            </button>
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '16px',
+            flexWrap: 'wrap',
+            paddingTop: '8px',
+            borderTop: '1px solid rgba(255, 255, 255, 0.12)',
+            fontSize: '0.75rem',
+            color: '#cbd5e1',
+          }}
+        >
+          <span>👤 Executive: <strong>{currentUser?.name}</strong> ({currentUser?.designation})</span>
+          <span>🏛️ Mode: <strong>Read-Only Governance Overview</strong></span>
+          <span>🚫 Access Policy: <strong>No User Management • No System Configuration • Mutations Disabled</strong></span>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
 }

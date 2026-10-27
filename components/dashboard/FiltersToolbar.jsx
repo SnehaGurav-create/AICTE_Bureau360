@@ -165,7 +165,9 @@ export function FiltersToolbar({
         >
           {officerBureau ? (
             <option value={officerBureau}>
-              {BUREAUS.find((b) => b.id === officerBureau)?.name || 'Assigned Bureau'} (Officer Scoped)
+              {officerBureau === 'regional'
+                ? 'Northern Regional Jurisdiction (Scoped)'
+                : `${BUREAUS.find((b) => b.id === officerBureau)?.name || 'Assigned Scope'} (Scoped)`}
             </option>
           ) : (
             BUREAUS.map((b) => (

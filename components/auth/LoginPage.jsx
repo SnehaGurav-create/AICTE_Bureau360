@@ -29,9 +29,11 @@ function EyeIcon({ open }) {
 }
 
 const DEMO_ROLE_OPTIONS = [
-  { role: ROLES.ADMIN,   label: 'Administrator', icon: '🛡️', email: 'admin@bureau360.demo' },
-  { role: ROLES.OFFICER, label: 'Bureau Officer', icon: '👮', email: 'officer@bureau360.demo' },
-  { role: ROLES.VIEWER,  label: 'Viewer',         icon: '👁️', email: 'viewer@bureau360.demo' },
+  { role: ROLES.AICTE_ADMINISTRATOR, label: 'Administrator', icon: '🛡️', email: 'admin@bureau360.demo' },
+  { role: ROLES.REGULATION_BUREAU,   label: 'Regulation Bureau', icon: '⚖️', email: 'regulation@bureau360.demo' },
+  { role: ROLES.PGRC,                label: 'PGRC Portal', icon: '📋', email: 'pgrc@bureau360.demo' },
+  { role: ROLES.REGIONAL_OFFICE,      label: 'Regional Office', icon: '🏢', email: 'regional.north@bureau360.demo' },
+  { role: ROLES.SENIOR_MANAGEMENT,   label: 'Senior Management', icon: '🏛️', email: 'management@bureau360.demo' },
 ];
 
 export function LoginPage({ onLoginSuccess, onCancel }) {

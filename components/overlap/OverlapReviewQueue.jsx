@@ -22,7 +22,7 @@ export function OverlapReviewQueue({ onInspectCase }) {
 
   const handleUpdateStatus = (comparisonId, newStatus) => {
     if (!canUpdateStatus) {
-      setNotificationMsg('Action restricted: Viewer role has read-only access and cannot update relationship status.');
+      setNotificationMsg('Action restricted: Read-only access for current role. Cannot update relationship status.');
       setTimeout(() => setNotificationMsg(''), 4000);
       return;
     }
@@ -250,7 +250,7 @@ export function OverlapReviewQueue({ onInspectCase }) {
                         </div>
                       ) : (
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          🔒 Read-only mode (Viewer): Relationship classification actions disabled
+                          🔒 Read-only access: Relationship classification actions disabled for current role
                         </div>
                       )}
                     </div>
