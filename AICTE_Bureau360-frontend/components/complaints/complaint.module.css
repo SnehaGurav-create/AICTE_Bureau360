@@ -1,0 +1,367 @@
+/* ==========================================================================
+   AICTE Bureau360 — Complaint Detail Dossier Scoped Styles
+   ========================================================================== */
+
+.detailContainer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  max-width: 1300px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Header & Back Bar */
+.backBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.backBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-brand-primary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+.backBtn:hover {
+  background: var(--bg-surface-secondary);
+  border-color: var(--border-strong);
+}
+
+.headerCard {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  position: relative;
+  overflow: hidden;
+}
+
+.headerTopRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.caseIdTitleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.caseIdBadge {
+  font-size: 0.8125rem;
+  font-weight: 800;
+  color: var(--color-brand-primary);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.caseMainTitle {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--color-brand-primary);
+  line-height: 1.3;
+}
+
+.badgeRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Overview Info Grid */
+.overviewGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.infoItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.infoLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+}
+
+.infoValue {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Complainant Confidentiality Cards */
+.confidentialCard {
+  background-color: #f8fafc;
+  border: 1px solid var(--border-subtle);
+  border-left: 4px solid var(--color-brand-primary);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.permittedCard {
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-left: 4px solid #16a34a;
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Overlap Review Specific Panel */
+.overlapPanel {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  position: relative;
+}
+
+.overlapPanelSuggested { border-left: 5px solid #f59e0b; }
+.overlapPanelAwaiting { border-left: 5px solid #3b82f6; }
+.overlapPanelConfirmed { border-left: 5px solid #dc2626; }
+.overlapPanelRejected { border-left: 5px solid #64748b; }
+
+.advisoryNote {
+  background-color: #faf5ff;
+  border: 1px solid #e9d5ff;
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  font-size: 0.8125rem;
+  color: #581c87;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.statusSelectorRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: var(--space-3) 0;
+}
+
+.statusRadioBtn {
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border-default);
+  background-color: var(--bg-surface-secondary);
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+}
+
+.statusRadioActive {
+  background-color: var(--color-brand-primary);
+  color: #ffffff;
+  border-color: var(--color-brand-primary);
+}
+
+/* Action Timeline */
+.timelineWrapper {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  padding-left: 20px;
+  margin-top: var(--space-2);
+}
+
+.timelineWrapper::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 10px;
+  bottom: 10px;
+  width: 2px;
+  background-color: var(--border-default);
+}
+
+.timelineEvent {
+  position: relative;
+  padding-bottom: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.timelineEvent:last-child {
+  padding-bottom: 0;
+}
+
+.timelineEventDot {
+  position: absolute;
+  left: -20px;
+  top: 4px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: var(--color-brand-accent);
+  border: 3px solid var(--bg-surface);
+  box-shadow: 0 0 0 1px var(--border-default);
+}
+
+.timelineDate {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.timelineStage {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--color-brand-primary);
+}
+
+.timelineMeta {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.timelineNotes {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  background-color: var(--bg-surface-secondary);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  margin-top: 4px;
+  border-left: 2px solid var(--border-default);
+}
+
+/* Transfer History Box */
+.transferCard {
+  background-color: var(--bg-surface-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.transferRoute {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  color: var(--color-brand-primary);
+  font-size: 0.9375rem;
+}
+
+/* Evidence Documents */
+.docGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-4);
+}
+
+.docCard {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--bg-surface-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.docMeta {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.docName {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.docSub {
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+}
+
+/* Related Complaints Cards */
+.relatedGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-4);
+}
+
+.relatedCard {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  background-color: var(--bg-surface);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-decoration: none;
+}
+
+.relatedCard:hover {
+  border-color: var(--color-brand-accent);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Backend Integration Status Banner */
+.backendNoticeBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background-color: #f8fafc;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}

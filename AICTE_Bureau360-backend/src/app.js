@@ -32,9 +32,16 @@ export function createApp() {
 
   // ── Security ──────────────────────────────────────────────────────────
   app.use(helmet());
+  const allowedOrigins = (env.CORS_ORIGIN || '').split(',').map((o) => o.trim()).filter(Boolean);
   app.use(
     cors({
-      origin: env.CORS_ORIGIN,
+      origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*') || /^http:\/\/localhost:\d+$/.test(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error(`Not allowed by CORS: ${origin}`));
+        }
+      },
       credentials: true,
     }),
   );

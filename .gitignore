@@ -225,3 +225,8 @@ node_modules/
 .env.*
 !.env.example
 *.log
+
+# Next.js & Frontend builds
+.next/
+out/
+.env*.local
