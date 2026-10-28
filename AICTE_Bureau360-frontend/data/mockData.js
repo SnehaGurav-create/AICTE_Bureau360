@@ -41,8 +41,8 @@ export const PRIORITY_OPTIONS = ['All Priorities', 'Critical', 'High', 'Medium',
 
 export const OVERLAP_STATUS_LABELS = {
   suggested: {
-    label: 'Possible Relationship Suggested',
-    description: 'System identified potential administrative/institutional relationship; pending human verification.',
+    label: 'Coordination Required (Suggested)',
+    description: 'System identified potential cross-bureau correlation; pending human verification.',
     badgeVariant: 'warning',
     color: '#b45309',
   },
@@ -53,14 +53,32 @@ export const OVERLAP_STATUS_LABELS = {
     color: '#1d4ed8',
   },
   confirmed: {
-    label: 'Relationship Confirmed by Reviewer',
-    description: 'Authorized reviewer has confirmed institutional cross-bureau linkage; joint hearing authorized.',
+    label: 'Confirmed Duplicate Case',
+    description: 'Authorized reviewer has confirmed identical grievance petition; merged for unified adjudication.',
     badgeVariant: 'critical',
     color: '#b91c1c',
   },
+  confirmed_related: {
+    label: 'Confirmed Related Cases',
+    description: 'Reviewer confirmed distinct complaints sharing common institutional violations requiring joint inquiry.',
+    badgeVariant: 'primary',
+    color: '#4338ca',
+  },
+  related_distinct: {
+    label: 'Related but Distinct Issues',
+    description: 'Same institution but separate substantive grounds; monitored in parallel with cross-reference.',
+    badgeVariant: 'neutral',
+    color: '#0891b2',
+  },
+  coordination_requested: {
+    label: 'Inter-Bureau Coordination Requested',
+    description: 'Formal coordination request dispatched to counterpart bureau for joint inquiry.',
+    badgeVariant: 'warning',
+    color: '#d97706',
+  },
   rejected: {
-    label: 'Relationship Rejected by Reviewer',
-    description: 'Reviewer determined cases represent distinct matters; correlation marked as unrelated/false positive.',
+    label: 'Rejected Match (False Positive)',
+    description: 'Reviewer determined cases represent completely independent matters; flagged correlation dismissed.',
     badgeVariant: 'neutral',
     color: '#475569',
   },
@@ -1476,6 +1494,33 @@ export const TRANSFERS_LOG = [
 ];
 
 export const OVERLAP_COMPARISONS = [
+  {
+    id: 'OVC-00',
+    primaryCaseId: 'RB-102',
+    secondaryCaseId: 'PGRC-208',
+    institutionName: 'ABC Engineering College',
+    institutionId: 'DEMO-1024',
+    similarityAssessment: '87.5% Overlap • Exact AICTE Permanent ID + Category Match + ML Text Similarity',
+    similarityScore: 0.875,
+    primaryBureau: 'Regulation Bureau',
+    secondaryBureau: 'PGRC',
+    status: 'suggested',
+    notes: 'Coordination Required: Both cases reference ABC Engineering College (DEMO-1024) across RB and PGRC regarding excess fee collection. Awaiting authorized joint coordination.',
+    primarySummary: 'Excess fee collection complaint: Regulatory audit initiated regarding demand of unauthorized capitation fees and non-refund of institutional security deposits.',
+    secondarySummary: 'Student complaint about excessive fees: Direct grievance submitted by student association alleging arbitrary mid-semester fee escalation and withheld certificates.',
+    primaryCategory: 'Capitation Fee & Excess Demands',
+    secondaryCategory: 'Capitation Fee & Excess Demands',
+    primaryStatus: 'Under process',
+    secondaryStatus: 'Pending',
+    primaryAssignment: 'Assigned to: Nodal Officer, RB • Last Action: Notice Dispatched (24h ago) • Next Action: Awaiting College Response',
+    secondaryAssignment: 'Assigned to: Case Officer, PGRC • Last Action: Grievance Acknowledged • Next Action: Student Evidence Verification',
+    evidenceItems: [
+      'Both cases reference the same verified institution (AICTE Permanent ID: DEMO-1024).',
+      'Complaint categories and descriptions have similar content (TF-IDF Cosine Similarity: 87.5%).',
+      'Different bureaus are handling the cases (Regulation Bureau vs PGRC — Cross-bureau coordination required).',
+      'Current assignments, last actions, and next actions are visible to authorized reviewers.'
+    ]
+  },
   {
     id: 'OVC-01',
     primaryCaseId: 'CASE-2026-0891',
