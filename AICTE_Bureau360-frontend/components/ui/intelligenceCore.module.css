@@ -1,0 +1,977 @@
+/* ==========================================================================
+   AICTE Bureau360 — Intelligence Core Cinematic 3D Loader
+   SIH 2026 Problem Statement 26264
+   
+   Visual Concept: "The Intelligence Core"
+   Spatial, cinematic institutional intelligence platform entrance.
+   ========================================================================== */
+
+.loaderOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 45%, #081a33 0%, #040d1a 50%, #02070e 100%);
+  color: #f8fafc;
+  overflow: hidden;
+  opacity: 1;
+  transform: scale(1) translateZ(0);
+  filter: blur(0px);
+  transition:
+    opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+    filter 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform, filter;
+}
+
+/* Subtle camera push-in and depth-dissolve transition into dashboard */
+.loaderOverlayExiting {
+  opacity: 0;
+  transform: scale(1.12) translateZ(80px);
+  filter: blur(6px);
+  pointer-events: none;
+}
+
+/* Background Particle Canvas (Hardware-friendly, low-overhead) */
+.particleCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Ambient Radial Lighting Cones */
+.ambientGlowTop {
+  position: absolute;
+  top: -15%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 650px;
+  height: 350px;
+  background: radial-gradient(ellipse at center, rgba(14, 165, 233, 0.14) 0%, transparent 70%);
+  filter: blur(60px);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.ambientGlowCenter {
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 480px;
+  height: 480px;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.12) 0%, rgba(217, 99, 22, 0.04) 50%, transparent 70%);
+  filter: blur(50px);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Content Container */
+.contentContainer {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--space-4);
+  max-width: 680px;
+  width: 100%;
+}
+
+/* --------------------------------------------------------------------------
+   3D Intelligence Core Composition
+   -------------------------------------------------------------------------- */
+.scene3D {
+  position: relative;
+  width: 320px;
+  height: 300px;
+  perspective: 1400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--space-5);
+  user-select: none;
+}
+
+/* Spatial Perspective Coordinate Floor Grid */
+.perspectiveGrid {
+  position: absolute;
+  bottom: -40px;
+  width: 380px;
+  height: 160px;
+  background-image:
+    linear-gradient(rgba(56, 189, 248, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, 0.12) 1px, transparent 1px);
+  background-size: 20px 20px;
+  transform: rotateX(72deg) translateZ(-40px);
+  mask-image: radial-gradient(ellipse at center, black 25%, transparent 72%);
+  -webkit-mask-image: radial-gradient(ellipse at center, black 25%, transparent 72%);
+  pointer-events: none;
+}
+
+/* Floor Glow Reflection Disc */
+.groundReflection {
+  position: absolute;
+  bottom: -28px;
+  width: 250px;
+  height: 70px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(56, 189, 248, 0.22) 0%, rgba(14, 165, 233, 0.06) 50%, transparent 75%);
+  transform: rotateX(72deg);
+  filter: blur(10px);
+  pointer-events: none;
+}
+
+.coreAssembly {
+  position: relative;
+  width: 240px;
+  height: 240px;
+  transform-style: preserve-3d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease-out;
+  animation: coreBreathing 14s ease-in-out infinite alternate;
+}
+
+.coreAssemblyExiting {
+  transform: translateZ(90px) scale(1.15) !important;
+  transition: transform 0.65s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* 1. Outer Concentric Orbital Ring */
+.ringOuter {
+  position: absolute;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  border: 1px dashed rgba(56, 189, 248, 0.35);
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.1), inset 0 0 15px rgba(56, 189, 248, 0.08);
+  transform-style: preserve-3d;
+  animation: orbitRotateOuter 22s linear infinite;
+}
+
+.ringOuterNode {
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 12px #38bdf8, 0 0 24px rgba(56, 189, 248, 0.8);
+}
+
+/* 2. Middle Concentric Coordination Ring */
+.ringMiddle {
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(14, 165, 233, 0.4);
+  border-top-color: rgba(56, 189, 248, 0.85);
+  border-bottom-color: rgba(2, 132, 199, 0.25);
+  box-shadow: 0 0 25px rgba(14, 165, 233, 0.15);
+  transform-style: preserve-3d;
+  animation: orbitRotateMiddle 16s linear infinite reverse;
+}
+
+.ringMiddleNode {
+  position: absolute;
+  bottom: -4px;
+  right: 25%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #0ea5e9;
+  box-shadow: 0 0 10px #0ea5e9;
+}
+
+/* 3. Gyroscopic Polar Ring (Full 3-axis depth) */
+.ringGimbal {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  border: 1px dotted rgba(56, 189, 248, 0.4);
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.1);
+  transform-style: preserve-3d;
+  animation: orbitRotateGimbal 26s linear infinite;
+}
+
+.ringGimbalNode {
+  position: absolute;
+  top: 50%;
+  left: -4px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 10px #38bdf8;
+}
+
+/* 4. Inner Verification Ring (Amber Accent) */
+.ringInner {
+  position: absolute;
+  width: 125px;
+  height: 125px;
+  border-radius: 50%;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-left-color: rgba(245, 158, 11, 0.85);
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.12);
+  transform-style: preserve-3d;
+  animation: orbitRotateInner 11s linear infinite;
+}
+
+.ringInnerNode {
+  position: absolute;
+  top: 15%;
+  right: -3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f59e0b;
+  box-shadow: 0 0 8px #f59e0b, 0 0 16px rgba(245, 158, 11, 0.6);
+}
+
+/* --------------------------------------------------------------------------
+   Outer Faceted Geometric Glass Cage & Central Nucleus
+   -------------------------------------------------------------------------- */
+.outerCage {
+  position: absolute;
+  width: 86px;
+  height: 86px;
+  transform-style: preserve-3d;
+  animation: cageRotate 24s ease-in-out infinite alternate;
+}
+
+.cageFace {
+  position: absolute;
+  width: 86px;
+  height: 86px;
+  border: 1px dashed rgba(56, 189, 248, 0.32);
+  background: radial-gradient(circle at center, rgba(56, 189, 248, 0.08) 0%, transparent 80%);
+  border-radius: 8px;
+}
+
+.cageFace1 { transform: rotateY(45deg) rotateX(45deg) translateZ(43px); }
+.cageFace2 { transform: rotateY(-45deg) rotateX(45deg) translateZ(43px); }
+.cageFace3 { transform: rotateY(45deg) rotateX(-45deg) translateZ(43px); }
+.cageFace4 { transform: rotateY(-45deg) rotateX(-45deg) translateZ(43px); }
+
+.crystalNucleus {
+  position: absolute;
+  width: 58px;
+  height: 58px;
+  transform-style: preserve-3d;
+  animation: crystalSpin 18s ease-in-out infinite alternate;
+}
+
+.crystalFace {
+  position: absolute;
+  width: 58px;
+  height: 58px;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.24) 0%, rgba(14, 165, 233, 0.06) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.6);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 0 15px rgba(56, 189, 248, 0.2), inset 0 0 10px rgba(56, 189, 248, 0.15);
+  border-radius: 4px;
+}
+
+.crystalFace1 { transform: rotateY(0deg) translateZ(29px); }
+.crystalFace2 { transform: rotateY(90deg) translateZ(29px); }
+.crystalFace3 { transform: rotateY(180deg) translateZ(29px); }
+.crystalFace4 { transform: rotateY(-90deg) translateZ(29px); }
+.crystalFace5 { transform: rotateX(90deg) translateZ(29px); }
+.crystalFace6 { transform: rotateX(-90deg) translateZ(29px); }
+
+/* Glowing Inner Energy Core */
+.energyCore {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffffff 0%, #38bdf8 45%, #0284c7 80%, rgba(2, 132, 199, 0) 100%);
+  box-shadow: 0 0 25px #38bdf8, 0 0 45px rgba(56, 189, 248, 0.6);
+  animation: energyPulse 3.2s ease-in-out infinite alternate;
+}
+
+/* Floating Satellite Data Nodes */
+.satelliteCluster {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  pointer-events: none;
+}
+
+.satelliteNode {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 8px #38bdf8;
+}
+
+.satellite1 { top: 12%; left: 15%; animation: floatSatellite1 5s ease-in-out infinite alternate; }
+.satellite2 { bottom: 15%; right: 18%; animation: floatSatellite2 6s ease-in-out infinite alternate; }
+.satellite3 { top: 75%; left: 22%; animation: floatSatellite3 4.5s ease-in-out infinite alternate; }
+.satellite4 { top: 25%; right: 12%; background: #f59e0b; box-shadow: 0 0 8px #f59e0b; animation: floatSatellite4 5.5s ease-in-out infinite alternate; }
+
+/* --------------------------------------------------------------------------
+   Translucent Floating Interface Fragments (Fictional Decorative Data)
+   -------------------------------------------------------------------------- */
+.hudContainer {
+  position: absolute;
+  inset: -20px -70px;
+  transform-style: preserve-3d;
+  pointer-events: none;
+  transition: transform 0.2s ease-out;
+}
+
+.hudContainerExiting {
+  opacity: 0;
+  transform: scale(1.18) translateZ(100px) !important;
+  transition: opacity 0.4s ease-out, transform 0.65s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.hudFragment {
+  position: absolute;
+  padding: 6px 10px;
+  background: rgba(6, 18, 36, 0.72);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  border-radius: 6px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(56, 189, 248, 0.06);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  user-select: none;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.hudHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hudCode {
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.08em;
+}
+
+.hudBody {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.hudLabel {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.hudBadge {
+  font-size: 0.5625rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.hudBadgeMuted {
+  font-size: 0.5625rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(52, 211, 153, 0.12);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.3);
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.hudBadgeAmber {
+  font-size: 0.5625rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(245, 158, 11, 0.14);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.hudDotCyan {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 6px #38bdf8;
+  animation: pulseDot 1.8s ease-in-out infinite;
+}
+
+.hudDotGreen {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 6px #34d399;
+  animation: pulseDot 2.2s ease-in-out infinite;
+}
+
+.hudDotAmber {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #f59e0b;
+  box-shadow: 0 0 6px #f59e0b;
+  animation: pulseDot 2s ease-in-out infinite;
+}
+
+/* Individual fragment positions and spatial 3D depths */
+.hudFragment1 {
+  top: 12px;
+  left: 0;
+  transform: translate3d(0, 0, 45px);
+  animation: floatHud1 5.4s ease-in-out infinite alternate;
+}
+
+.hudFragment2 {
+  top: 24px;
+  right: 0;
+  transform: translate3d(0, 0, -25px);
+  opacity: 0.82;
+  animation: floatHud2 6.2s ease-in-out infinite alternate;
+}
+
+.hudFragment3 {
+  bottom: 28px;
+  left: 12px;
+  transform: translate3d(0, 0, -15px);
+  opacity: 0.88;
+  animation: floatHud3 5.8s ease-in-out infinite alternate;
+}
+
+.hudFragment4 {
+  bottom: 14px;
+  right: 6px;
+  transform: translate3d(0, 0, 60px);
+  animation: floatHud4 4.9s ease-in-out infinite alternate;
+}
+
+/* --------------------------------------------------------------------------
+   Branding & Elegant Wordmark Reveal
+   -------------------------------------------------------------------------- */
+.brandGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: var(--space-4);
+}
+
+.brandSuper {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.42em;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: superReveal 0.75s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.brandSuper::before,
+.brandSuper::after {
+  content: '';
+  display: inline-block;
+  width: 22px;
+  height: 1px;
+  background: rgba(148, 163, 184, 0.4);
+}
+
+.brandTitle {
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  margin: 0;
+  line-height: 1.1;
+  background: linear-gradient(110deg, #f8fafc 0%, #38bdf8 35%, #ffffff 50%, #7dd3fc 65%, #f8fafc 100%);
+  background-size: 260% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 14px rgba(56, 189, 248, 0.25));
+  animation:
+    wordmarkReveal 0.85s cubic-bezier(0.16, 1, 0.3, 1) both,
+    wordmarkSheen 4.8s ease-in-out infinite 0.9s;
+}
+
+.brandHighlight {
+  color: #38bdf8;
+  -webkit-text-fill-color: #38bdf8;
+  text-shadow: 0 0 16px rgba(56, 189, 248, 0.6);
+}
+
+.tagline {
+  font-size: 0.8125rem;
+  color: #94a3b8;
+  margin: 0;
+  letter-spacing: 0.04em;
+  max-width: 440px;
+  line-height: 1.45;
+  animation: taglineReveal 0.8s ease-out 0.35s both;
+}
+
+/* --------------------------------------------------------------------------
+   Status Line & Progress Indicator
+   -------------------------------------------------------------------------- */
+.statusContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: var(--space-3);
+  width: 100%;
+}
+
+.statusTextWrapper {
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.statusMessage {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: #38bdf8;
+  text-transform: uppercase;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: opacity 0.25s ease-in-out;
+}
+
+.statusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 6px #38bdf8;
+  animation: pulseDot 1.4s ease-in-out infinite;
+}
+
+/* Slim Indeterminate Progress Bar */
+.progressTrack {
+  position: relative;
+  width: 220px;
+  height: 2.5px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.progressBarIndeterminate {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 45%;
+  background: linear-gradient(90deg, transparent 0%, #38bdf8 50%, #f59e0b 100%);
+  border-radius: 9999px;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.8);
+  animation: indeterminateSweep 1.6s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+/* --------------------------------------------------------------------------
+   Keyframe Animations (Hardware-Accelerated)
+   -------------------------------------------------------------------------- */
+@keyframes superReveal {
+  0% {
+    opacity: 0;
+    letter-spacing: 0.18em;
+    transform: translateY(4px);
+  }
+  100% {
+    opacity: 0.85;
+    letter-spacing: 0.42em;
+    transform: translateY(0);
+  }
+}
+
+@keyframes wordmarkReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+    background-position: 100% 0;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    background-position: 0% 0;
+  }
+}
+
+@keyframes wordmarkSheen {
+  0% {
+    background-position: 0% 0;
+  }
+  50% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: 0% 0;
+  }
+}
+
+@keyframes taglineReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  100% {
+    opacity: 0.9;
+    transform: translateY(0);
+  }
+}
+
+@keyframes orbitRotateOuter {
+  0% {
+    transform: rotateX(68deg) rotateY(-20deg) rotateZ(0deg);
+  }
+  100% {
+    transform: rotateX(68deg) rotateY(-20deg) rotateZ(360deg);
+  }
+}
+
+@keyframes orbitRotateMiddle {
+  0% {
+    transform: rotateX(-55deg) rotateY(35deg) rotateZ(0deg);
+  }
+  100% {
+    transform: rotateX(-55deg) rotateY(35deg) rotateZ(360deg);
+  }
+}
+
+@keyframes orbitRotateGimbal {
+  0% {
+    transform: rotateX(80deg) rotateY(70deg) rotateZ(0deg);
+  }
+  100% {
+    transform: rotateX(80deg) rotateY(70deg) rotateZ(360deg);
+  }
+}
+
+@keyframes orbitRotateInner {
+  0% {
+    transform: rotateX(25deg) rotateY(-65deg) rotateZ(0deg);
+  }
+  100% {
+    transform: rotateX(25deg) rotateY(-65deg) rotateZ(360deg);
+  }
+}
+
+@keyframes cageRotate {
+  0% {
+    transform: rotateX(25deg) rotateY(0deg) rotateZ(0deg);
+  }
+  50% {
+    transform: rotateX(-35deg) rotateY(180deg) rotateZ(30deg);
+  }
+  100% {
+    transform: rotateX(30deg) rotateY(360deg) rotateZ(-20deg);
+  }
+}
+
+@keyframes crystalSpin {
+  0% {
+    transform: rotateX(15deg) rotateY(0deg) rotateZ(0deg);
+  }
+  50% {
+    transform: rotateX(45deg) rotateY(180deg) rotateZ(25deg);
+  }
+  100% {
+    transform: rotateX(-20deg) rotateY(360deg) rotateZ(-15deg);
+  }
+}
+
+@keyframes coreBreathing {
+  0% {
+    transform: translateZ(0px) scale(0.97);
+  }
+  100% {
+    transform: translateZ(25px) scale(1.03);
+  }
+}
+
+@keyframes energyPulse {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.75;
+    box-shadow: 0 0 15px #38bdf8, 0 0 30px rgba(56, 189, 248, 0.4);
+  }
+  100% {
+    transform: scale(1.15);
+    opacity: 1;
+    box-shadow: 0 0 30px #38bdf8, 0 0 60px rgba(56, 189, 248, 0.8), 0 0 15px rgba(245, 158, 11, 0.4);
+  }
+}
+
+@keyframes indeterminateSweep {
+  0% {
+    left: -45%;
+    width: 30%;
+  }
+  50% {
+    left: 35%;
+    width: 55%;
+  }
+  100% {
+    left: 100%;
+    width: 30%;
+  }
+}
+
+@keyframes pulseDot {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes floatSatellite1 {
+  0% { transform: translate3d(0, 0, 10px); }
+  100% { transform: translate3d(8px, -10px, 35px); }
+}
+
+@keyframes floatSatellite2 {
+  0% { transform: translate3d(0, 0, 5px); }
+  100% { transform: translate3d(-10px, 12px, -20px); }
+}
+
+@keyframes floatSatellite3 {
+  0% { transform: translate3d(0, 0, 20px); }
+  100% { transform: translate3d(6px, 8px, -15px); }
+}
+
+@keyframes floatSatellite4 {
+  0% { transform: translate3d(0, 0, -10px); }
+  100% { transform: translate3d(-8px, -6px, 25px); }
+}
+
+@keyframes floatHud1 {
+  0% { transform: translate3d(0, 0, 45px); }
+  100% { transform: translate3d(4px, -8px, 55px); }
+}
+
+@keyframes floatHud2 {
+  0% { transform: translate3d(0, 0, -25px); }
+  100% { transform: translate3d(-6px, 6px, -20px); }
+}
+
+@keyframes floatHud3 {
+  0% { transform: translate3d(0, 0, -15px); }
+  100% { transform: translate3d(6px, 5px, -10px); }
+}
+
+@keyframes floatHud4 {
+  0% { transform: translate3d(0, 0, 60px); }
+  100% { transform: translate3d(-5px, -6px, 70px); }
+}
+
+/* --------------------------------------------------------------------------
+   Accessibility: Prefers-Reduced-Motion Support
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .coreAssembly,
+  .ringOuter,
+  .ringMiddle,
+  .ringGimbal,
+  .ringInner,
+  .outerCage,
+  .crystalNucleus,
+  .energyCore,
+  .satellite1,
+  .satellite2,
+  .satellite3,
+  .satellite4,
+  .statusDot,
+  .progressBarIndeterminate,
+  .brandSuper,
+  .brandTitle,
+  .tagline,
+  .hudFragment1,
+  .hudFragment2,
+  .hudFragment3,
+  .hudFragment4 {
+    animation: none !important;
+  }
+
+  .crystalNucleus {
+    transform: rotateX(20deg) rotateY(45deg);
+  }
+
+  .ringOuter {
+    transform: rotateX(68deg) rotateY(-20deg);
+  }
+
+  .ringMiddle {
+    transform: rotateX(-55deg) rotateY(35deg);
+  }
+
+  .ringGimbal {
+    transform: rotateX(80deg) rotateY(70deg);
+  }
+
+  .ringInner {
+    transform: rotateX(25deg) rotateY(-65deg);
+  }
+
+  .progressBarIndeterminate {
+    width: 100%;
+    left: 0;
+  }
+
+  .loaderOverlay {
+    transition: opacity 0.2s linear !important;
+  }
+
+  .loaderOverlayExiting {
+    transform: none !important;
+    filter: none !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Mobile & Responsive Adjustments
+   -------------------------------------------------------------------------- */
+@media (max-width: 640px) {
+  .scene3D {
+    width: 240px;
+    height: 240px;
+    margin-bottom: var(--space-4);
+  }
+
+  .hudContainer {
+    inset: -10px -20px;
+  }
+
+  .hudFragment2,
+  .hudFragment3 {
+    display: none; /* Keep mobile uncluttered */
+  }
+
+  .hudFragment1 {
+    top: -5px;
+    left: 5px;
+    transform: translate3d(0, 0, 30px);
+  }
+
+  .hudFragment4 {
+    bottom: -5px;
+    right: 5px;
+    transform: translate3d(0, 0, 40px);
+  }
+
+  .perspectiveGrid {
+    width: 260px;
+    height: 120px;
+    bottom: -30px;
+  }
+
+  .coreAssembly {
+    width: 190px;
+    height: 190px;
+  }
+
+  .ringOuter {
+    width: 190px;
+    height: 190px;
+  }
+
+  .ringMiddle {
+    width: 140px;
+    height: 140px;
+  }
+
+  .ringGimbal {
+    width: 155px;
+    height: 155px;
+  }
+
+  .ringInner {
+    width: 95px;
+    height: 95px;
+  }
+
+  .crystalNucleus,
+  .crystalFace {
+    width: 48px;
+    height: 48px;
+  }
+
+  .outerCage,
+  .cageFace {
+    width: 64px;
+    height: 64px;
+  }
+
+  .cageFace1 { transform: rotateY(45deg) rotateX(45deg) translateZ(32px); }
+  .cageFace2 { transform: rotateY(-45deg) rotateX(45deg) translateZ(32px); }
+  .cageFace3 { transform: rotateY(45deg) rotateX(-45deg) translateZ(32px); }
+  .cageFace4 { transform: rotateY(-45deg) rotateX(-45deg) translateZ(32px); }
+
+  .crystalFace1 { transform: rotateY(0deg) translateZ(24px); }
+  .crystalFace2 { transform: rotateY(90deg) translateZ(24px); }
+  .crystalFace3 { transform: rotateY(180deg) translateZ(24px); }
+  .crystalFace4 { transform: rotateY(-90deg) translateZ(24px); }
+  .crystalFace5 { transform: rotateX(90deg) translateZ(24px); }
+  .crystalFace6 { transform: rotateX(-90deg) translateZ(24px); }
+
+  .brandTitle {
+    font-size: 1.625rem;
+  }
+
+  .tagline {
+    font-size: 0.75rem;
+    padding: 0 var(--space-2);
+  }
+
+  .progressTrack {
+    width: 180px;
+  }
+}

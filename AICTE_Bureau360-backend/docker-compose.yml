@@ -1,0 +1,53 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: bureau360
+      POSTGRES_PASSWORD: bureau360
+      POSTGRES_DB: bureau360
+    ports:
+      - '5433:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Run schema and migrations automatically on first launch
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./db/migrations/002_overlap_detection_tables.sql:/docker-entrypoint-initdb.d/02-overlap.sql:ro
+      - ./db/migrations/003_notifications_schema_update.sql:/docker-entrypoint-initdb.d/03-notifications.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U bureau360']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  ml:
+    build:
+      context: ./ml
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - '5050:5050'
+    environment:
+      - PORT=5050
+
+  api:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      ml:
+        condition: service_started
+    ports:
+      - '3000:3000'
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://bureau360:bureau360@db:5432/bureau360
+      ML_OVERLAP_URL: http://ml:5050
+      CORS_ORIGIN: http://localhost:3001,http://localhost:3000,http://localhost:5173
+    volumes:
+      - ./uploads:/app/uploads
+
+volumes:
+  pgdata:

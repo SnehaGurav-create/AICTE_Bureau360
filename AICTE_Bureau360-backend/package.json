@@ -1,0 +1,49 @@
+{
+  "name": "bureau360-backend",
+  "version": "1.0.0",
+  "description": "AICTE Bureau360 — Integrated complaint tracking dashboard backend (SIH26264)",
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev": "node --env-file=.env --watch src/server.js",
+    "start": "node --env-file=.env src/server.js",
+    "migrate": "node-pg-migrate --migration-file-language sql --migrations-dir db/migrations up",
+    "migrate:down": "node-pg-migrate --migration-file-language sql --migrations-dir db/migrations down",
+    "seed:admin": "node --env-file=.env db/seeds/seed-admin.js",
+    "seed:demo": "node --env-file=.env db/seeds/seed-demo-data.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src/ tests/",
+    "format": "prettier --write \"src/**/*.js\" \"tests/**/*.js\""
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "exceljs": "^4.4.0",
+    "express": "^5.1.0",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.2",
+    "node-cron": "^3.0.3",
+    "node-pg-migrate": "^7.9.1",
+    "nodemailer": "^6.10.1",
+    "pdfkit": "^0.16.0",
+    "pg": "^8.13.3",
+    "pino": "^9.6.0",
+    "pino-http": "^10.4.0",
+    "pino-pretty": "^13.0.0",
+    "swagger-ui-express": "^5.0.1",
+    "yaml": "^2.7.0",
+    "zod": "^3.24.4"
+  },
+  "devDependencies": {
+    "eslint": "^9.20.0",
+    "globals": "^16.0.0",
+    "prettier": "^3.5.3",
+    "supertest": "^7.1.0",
+    "vitest": "^3.1.3"
+  }
+}
