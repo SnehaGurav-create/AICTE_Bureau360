@@ -204,7 +204,25 @@ export function OverlapReviewQueue({ onInspectCase }) {
               return (
                 <Card key={item.id}>
                   <CardHeader
-                    title={`${item.institutionName} — Potential Overlapping Cases`}
+                    title={
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        <span>{item.institutionName}</span>
+                        {item.caseCategoryTag && (
+                          <span style={{
+                            fontSize: '0.6875rem',
+                            fontWeight: 800,
+                            padding: '3px 8px',
+                            borderRadius: 'var(--radius-sm)',
+                            backgroundColor: item.caseCategoryTag.includes('Case 1') ? '#fee2e2' : item.caseCategoryTag.includes('Case 2') ? '#e0f2fe' : item.caseCategoryTag.includes('Case 3') ? '#ede9fe' : '#fef3c7',
+                            color: item.caseCategoryTag.includes('Case 1') ? '#991b1b' : item.caseCategoryTag.includes('Case 2') ? '#0369a1' : item.caseCategoryTag.includes('Case 3') ? '#6b21a8' : '#92400e',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.04em'
+                          }}>
+                            {item.caseCategoryTag}
+                          </span>
+                        )}
+                      </div>
+                    }
                     subtitle={`AICTE Permanent ID: ${item.institutionId} • Matching Engine: ${item.similarityAssessment}`}
                     action={<Badge variant={statusMeta.badgeVariant}>{statusMeta.label}</Badge>}
                   />
@@ -342,12 +360,34 @@ export function OverlapReviewQueue({ onInspectCase }) {
                         <span>Evidence Shown to the Reviewer (Matching Engine Confidence Breakdown):</span>
                       </div>
                       <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '0.8125rem', color: '#475569', lineHeight: 1.6 }}>
-                        <li>Both cases reference the same verified institution (AICTE Permanent ID: <strong>{item.institutionId}</strong>).</li>
-                        <li>Complaint categories and descriptions have similar content ({item.similarityAssessment}).</li>
-                        <li>Different bureaus are handling the cases ({item.primaryBureau} and {item.secondaryBureau} — <strong>Coordination required</strong>).</li>
-                        <li>Current assignments, last actions, and next steps are verified and visible to authorized reviewers.</li>
+                        {item.evidenceItems ? (
+                          item.evidenceItems.map((ev, idx) => <li key={idx}>{ev}</li>)
+                        ) : (
+                          <>
+                            <li>Both cases reference the same verified institution (AICTE Permanent ID: <strong>{item.institutionId}</strong>).</li>
+                            <li>Complaint categories and descriptions have similar content ({item.similarityAssessment}).</li>
+                            <li>Different bureaus are handling the cases ({item.primaryBureau} and {item.secondaryBureau} — <strong>Coordination required</strong>).</li>
+                            <li>Current assignments, last actions, and next steps are verified and visible to authorized reviewers.</li>
+                          </>
+                        )}
                       </ul>
                     </div>
+
+                    {/* System Policy & Statutory Action Protocol */}
+                    {item.systemActionsDescription && (
+                      <div style={{
+                        marginTop: '10px',
+                        padding: '10px 14px',
+                        background: '#f1f5f9',
+                        borderLeft: '4px solid var(--color-brand-primary)',
+                        borderRadius: '0 var(--radius-sm) var(--radius-sm) 0',
+                        fontSize: '0.75rem',
+                        color: '#334155',
+                        lineHeight: 1.5,
+                      }}>
+                        <strong>Statutory System Action Protocol:</strong> {item.systemActionsDescription}
+                      </div>
+                    )}
 
                     {/* Reviewer Action Bar */}
                     <div style={{

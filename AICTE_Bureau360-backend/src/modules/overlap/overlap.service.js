@@ -97,43 +97,81 @@ export async function detectOverlaps(complaintId, user) {
 
   for (const other of sameInstComplaints) {
     const reasons = [];
-    let maxScore = 0;
+    const isSameCategory = other.category_id === complaint.category_id;
+    const isDifferentBureau = other.current_bureau_id !== complaint.current_bureau_id;
 
-    // Reason: exact institution ID
-    reasons.push({
-      method: 'EXACT_INSTITUTION_ID',
-      detail: `Both complaints reference institution ${complaint.aicte_id}`,
-      score: 1.0,
-    });
-    maxScore = 1.0;
+    // Lexical description similarity (token Jaccard)
+    const textJaccard = tokenSimilarity(
+      `${complaint.title} ${complaint.description}`,
+      `${other.title} ${other.description}`,
+    );
 
-    // Bonus: same category + different bureau → coordination needed
-    if (
-      other.category_id === complaint.category_id &&
-      other.current_bureau_id !== complaint.current_bureau_id
-    ) {
-      reasons.push({
-        method: 'SAME_CATEGORY_BUREAU',
-        detail: `Same category "${other.category_name}" handled by different bureaus — coordination required`,
-        score: 0.9,
-      });
-    }
-
-    // Optional: ML description similarity
+    // Call ML service for deep semantic similarity
     const ml = await callMlService(
       `${complaint.title} ${complaint.description}`,
       `${other.title} ${other.description}`,
     );
-    if (ml && ml.probability > threshold) {
-      reasons.push({
-        method: 'ML_DESCRIPTION_SIMILARITY',
-        detail: ml.explanation || `ML model predicts ${(ml.probability * 100).toFixed(1)}% overlap`,
-        score: ml.probability,
-      });
-      maxScore = Math.max(maxScore, ml.probability);
+    const textSim = ml ? ml.probability : textJaccard;
+
+    // ── 4-Case Taxonomy Evaluation ──────────────────────────────────
+    // Case 2: Same college + different complaints (Separate cases)
+    // Different category AND low description similarity (< 0.30)
+    // Kept as independent cases; DO NOT create an overlap link.
+    if (!isSameCategory && textSim < 0.30) {
+      continue;
     }
 
-    results.push({ complaint: other, reasons, aggregateScore: maxScore });
+    // Weighted composite score (Institution 40%, Category 25%, Text 35%)
+    const instScore = 0.40;
+    const catScore = isSameCategory ? 0.25 : 0.0;
+    const textScore = textSim * 0.35;
+    const compositeScore = instScore + catScore + textScore;
+
+    // Case 1: Same college + same complaint (Potential duplicate)
+    // High text similarity AND same category, OR overwhelming text overlap (>= 0.75)
+    const isPotentialDuplicate = (isSameCategory && textSim >= 0.45) || textSim >= 0.75;
+    const linkType = isPotentialDuplicate ? 'DUPLICATE' : 'RELATED';
+
+    // Record explainable reasons
+    reasons.push({
+      method: 'EXACT_INSTITUTION_ID',
+      detail: `Both complaints reference verified institution ${complaint.aicte_id}`,
+      score: 1.0,
+    });
+
+    if (isSameCategory) {
+      if (isDifferentBureau) {
+        reasons.push({
+          method: 'SAME_CATEGORY_BUREAU',
+          detail: `Same category "${other.category_name}" handled by different bureaus (${complaint.bureau_name || 'Intake'} ↔ ${other.bureau_name || 'Other'}) — coordination required`,
+          score: 0.9,
+        });
+      } else {
+        reasons.push({
+          method: 'SAME_CATEGORY_BUREAU',
+          detail: `Same category "${other.category_name}" within same bureau`,
+          score: 0.8,
+        });
+      }
+    }
+
+    if (textSim >= 0.25) {
+      reasons.push({
+        method: 'ML_DESCRIPTION_SIMILARITY',
+        detail: ml?.explanation || `Semantic description similarity: ${(textSim * 100).toFixed(1)}%`,
+        score: textSim,
+      });
+    }
+
+    if (compositeScore >= threshold) {
+      results.push({
+        complaint: other,
+        reasons,
+        aggregateScore: Math.min(1.0, Math.round(compositeScore * 1000) / 1000),
+        linkType,
+        isPotentialDuplicate,
+      });
+    }
   }
 
   // ── Strategy 2: Similar institution name (pg_trgm) ────────────────
@@ -144,41 +182,53 @@ export async function detectOverlaps(complaintId, user) {
   );
 
   for (const simInst of similarInstitutions) {
-    // Get complaints for each similar institution
     const simComplaints = await repo.findComplaintsByInstitution(simInst.id, complaintId);
 
     for (const other of simComplaints) {
-      // Skip if already found via exact ID
       if (results.some((r) => r.complaint.id === other.id)) continue;
 
       const reasons = [];
-
-      // Normalised name similarity
       const nameSim = tokenSimilarity(complaint.institution_name, simInst.name);
-      reasons.push({
-        method: 'NORMALIZED_NAME',
-        detail: `Institution names are ${(simInst.sim_score * 100).toFixed(0)}% similar (pg_trgm: "${complaint.institution_name}" ≈ "${simInst.name}")`,
-        score: simInst.sim_score,
-      });
-
-      let maxScore = simInst.sim_score;
-
-      // ML similarity for cross-institution
+      
       const ml = await callMlService(
         `${complaint.title} ${complaint.description}`,
         `${other.title} ${other.description}`,
       );
-      if (ml && ml.probability > threshold) {
-        reasons.push({
-          method: 'ML_DESCRIPTION_SIMILARITY',
-          detail: ml.explanation || `ML model predicts ${(ml.probability * 100).toFixed(1)}% overlap`,
-          score: ml.probability,
-        });
-        maxScore = Math.max(maxScore, ml.probability);
-      }
+      const textSim = ml ? ml.probability : tokenSimilarity(
+        `${complaint.title} ${complaint.description}`,
+        `${other.title} ${other.description}`,
+      );
 
-      if (maxScore >= threshold) {
-        results.push({ complaint: other, reasons, aggregateScore: maxScore });
+      // Case 4: Different colleges with similar complaints
+      // NEVER classify across different institutions as DUPLICATE.
+      // Maximum classification is RELATED, only if name similarity and text similarity are both high.
+      const simInstScore = simInst.sim_score * 0.40;
+      const simCatScore = (other.category_id === complaint.category_id ? 0.25 : 0.0);
+      const simTextScore = textSim * 0.35;
+      const compositeScore = simInstScore + simCatScore + simTextScore;
+
+      if (compositeScore >= threshold && simInst.sim_score >= 0.4) {
+        reasons.push({
+          method: 'NORMALIZED_NAME',
+          detail: `Institution names are ${(simInst.sim_score * 100).toFixed(0)}% similar (pg_trgm: "${complaint.institution_name}" ≈ "${simInst.name}")`,
+          score: simInst.sim_score,
+        });
+
+        if (textSim >= 0.25) {
+          reasons.push({
+            method: 'ML_DESCRIPTION_SIMILARITY',
+            detail: ml?.explanation || `Semantic description similarity: ${(textSim * 100).toFixed(1)}%`,
+            score: textSim,
+          });
+        }
+
+        results.push({
+          complaint: other,
+          reasons,
+          aggregateScore: Math.min(1.0, Math.round(compositeScore * 1000) / 1000),
+          linkType: 'RELATED', // Strict Case 4 rule: Never duplicate across different colleges
+          isPotentialDuplicate: false,
+        });
       }
     }
   }
@@ -212,7 +262,7 @@ export async function detectAndPersistOverlaps(complaintId, user) {
         {
           complaint_id: complaintId,
           related_complaint_id: result.complaint.id,
-          link: result.aggregateScore >= 0.9 ? 'DUPLICATE' : 'OVERLAP',
+          link: result.linkType || (result.aggregateScore >= 0.85 ? 'DUPLICATE' : 'RELATED'),
           similarity_score: result.aggregateScore,
           created_by: null, // system-generated
         },
