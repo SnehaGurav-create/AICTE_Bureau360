@@ -40,6 +40,105 @@ paths:
         '503':
           description: Database unreachable
 
+  /auth/register:
+    post:
+      summary: Register a new user
+      description: Creates a user account with hashed password and generates initial tokens.
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, full_name]
+              properties:
+                email: { type: string, format: email, example: "officer.new@aicte.gov.in" }
+                password: { type: string, minLength: 8, example: "Password@123" }
+                full_name: { type: string, example: "Dr. Ananya Sharma" }
+                phone: { type: string, example: "9876543210" }
+                designation: { type: string, example: "Assistant Director" }
+                role_code: { type: string, enum: [ADMIN, REGULATION_BUREAU, PGRC, OTHER_BUREAU, REGIONAL_OFFICE, AUTHORIZED_OFFICER], default: AUTHORIZED_OFFICER }
+                bureau_id: { type: integer, example: 1 }
+      responses:
+        '201':
+          description: User registered successfully
+        '400':
+          description: Validation error or invalid role/bureau
+        '409':
+          description: Email already registered
+
+  /auth/login:
+    post:
+      summary: User login
+      description: Validates credentials, updates login count, locks account if failed 5 times, and returns access and refresh tokens.
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email, example: "admin@aicte.gov.in" }
+                password: { type: string, example: "Admin@123" }
+      responses:
+        '200':
+          description: Login successful
+        '401':
+          description: Invalid email or password
+        '423':
+          description: Account temporarily locked due to failed attempts
+
+  /auth/refresh:
+    post:
+      summary: Refresh access token
+      description: Rotates the refresh token and issues a new access token.
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken: { type: string }
+      responses:
+        '200':
+          description: Token refreshed
+        '401':
+          description: Invalid or expired refresh token
+
+  /auth/logout:
+    post:
+      summary: User logout
+      description: Revokes the refresh token.
+      tags: [Auth]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken: { type: string }
+      responses:
+        '200':
+          description: Logged out successfully
+
+  /auth/me:
+    get:
+      summary: Get current logged-in user profile
+      description: Returns the user's role, permissions, bureau, and region.
+      tags: [Auth]
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Profile retrieved successfully
+        '401':
+          description: Missing or invalid token
+
   /meta:
     get:
       summary: Get all reference data

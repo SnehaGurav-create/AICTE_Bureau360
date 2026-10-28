@@ -119,13 +119,22 @@ http://localhost:3000/api/docs/openapi.yaml
 
 All endpoints are prefixed with `/api/v1`. Authenticated endpoints require `Authorization: Bearer <token>`.
 
-### 1. System & Meta
+### 1. Authentication & Session (`/auth`)
+| Method | Endpoint | Access | Description |
+|:---|:---|:---|:---|
+| `POST` | `/auth/register` | Public | Register new user account with hashed password and return tokens |
+| `POST` | `/auth/login` | Public (Rate-limited) | Authenticate user credentials, check lockout, and issue access & refresh tokens |
+| `POST` | `/auth/refresh` | Public | Enforces refresh token rotation and returns new access/refresh tokens |
+| `POST` | `/auth/logout` | Public | Revokes refresh token |
+| `GET` | `/auth/me` | Authenticated | Retrieve current authenticated user profile, roles, and permissions |
+
+### 2. System & Meta
 | Method | Endpoint | Access | Description |
 |:---|:---|:---|:---|
 | `GET` | `/health` | Public | Service health & PostgreSQL connectivity status |
 | `GET` | `/meta` | Authenticated | Reference data: categories, statuses, priorities, sources, bureaus, regions, roles, status transitions map |
 
-### 2. Institutions (`/institutions`)
+### 3. Institutions (`/institutions`)
 | Method | Endpoint | Permission | Description |
 |:---|:---|:---|:---|
 | `GET` | `/institutions` | `institution:read` | List institutions with filters (`state`, `region_id`, `status`), sorting, and pagination |
@@ -138,7 +147,7 @@ All endpoints are prefixed with `/api/v1`. Authenticated endpoints require `Auth
 | `GET` | `/institutions/:aicteId/documents` | `institution:read` | List institutional documents |
 | `POST` | `/institutions/import` | `institution:write` | Bulk import institutions from CSV |
 
-### 3. Complaints Core (`/complaints`)
+### 4. Complaints Core (`/complaints`)
 | Method | Endpoint | Permission | Description |
 |:---|:---|:---|:---|
 | `GET` | `/complaints` | `complaint:read` | List complaints scoped to caller's role (`ALL`, `REGION`, `BUREAU`, `ASSIGNED`) with filters, overdue flag, and pagination |
@@ -149,20 +158,34 @@ All endpoints are prefixed with `/api/v1`. Authenticated endpoints require `Auth
 | `POST` | `/complaints/:id/remarks` | `complaint:remark` | Add commentary/remark. Supports `is_internal: true` to restrict visibility to caller's bureau |
 | `GET` | `/complaints/:id/timeline` | `complaint:read` | Chronological immutable action history. Automatically filters internal remarks for non-owning bureaus |
 
-### 4. Assignments & Transfers (`/complaints/:id`)
+### 5. Assignments & Transfers (`/complaints/:id`)
 | Method | Endpoint | Permission | Description |
 |:---|:---|:---|:---|
 | `POST` | `/complaints/:id/assign` | `complaint:assign` | Assign case to bureau and/or officer. Deactivates previous assignment (`is_current = false`). Transitions status from `NEW`/`UNDER_REVIEW` to `ASSIGNED` |
 | `POST` | `/complaints/:id/transfer` | `complaint:transfer` | Transfer case between bureaus with required justification `reason`. Automatically recalculates SLA if destination bureau has custom rule |
 | `GET` | `/complaints/:id/assignments` | `complaint:read` | Chronological assignment history with joined bureau and officer names |
 
-### 5. Complaint Documents (`/complaints/:id/documents`)
+### 6. Complaint Documents (`/complaints/:id/documents`)
 | Method | Endpoint | Permission | Description |
 |:---|:---|:---|:---|
 | `POST` | `/complaints/:id/documents` | `document:upload` | Multipart file upload (PDF/JPG/PNG up to 10 MB, max 5 files). Calculates SHA-256 hash, links to timeline via `action_id` |
 | `GET` | `/complaints/:id/documents` | `complaint:read` | List documents attached to a complaint with metadata, uploader name, and SHA-256 checksums |
 | `GET` | `/complaints/:id/documents/:documentId` | `complaint:read` | Get single document metadata |
 | `GET` | `/complaints/:id/documents/:documentId/download` | `complaint:read` | Download file with `Content-Disposition: attachment` stream |
+
+---
+
+## 👥 Default Demo Accounts (Pre-Seeded)
+
+Run `npm run seed:admin` to seed standard accounts representing each portal persona:
+
+| Portal Persona | Email | Password | Role Code | Scope | Bureau / Region |
+|:---|:---|:---|:---|:---|:---|
+| **AICTE Administrator** | `admin@aicte.gov.in` | `Admin@123` | `ADMIN` | `ALL` | All Bureaus & Regions |
+| **Regulation Bureau** | `rb@aicte.gov.in` | `Rb@123` | `REGULATION_BUREAU` | `ALL` | `REG_BUREAU` (Regulation Bureau) |
+| **PGRC Portal** | `pgrc@aicte.gov.in` | `Pgrc@123` | `PGRC` | `ALL` | `PGRC` (Grievance Cell) |
+| **Regional Office (North)** | `ro.north@aicte.gov.in` | `Ro@123` | `REGIONAL_OFFICE` | `REGION` | `RO_NORTH` (Northern Region) |
+| **Authorized Officer** | `officer@aicte.gov.in` | `Officer@123` | `AUTHORIZED_OFFICER` | `ASSIGNED` | `REG_BUREAU` |
 
 ---
 

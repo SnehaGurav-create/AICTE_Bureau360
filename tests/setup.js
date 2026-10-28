@@ -8,6 +8,9 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const envPath = path.resolve(__dirname, '..', '.env');
 
+process.env.NODE_ENV = 'test';
+process.env.BCRYPT_ROUNDS = '4';
+
 if (fs.existsSync(envPath)) {
   const content = fs.readFileSync(envPath, 'utf8');
   for (const line of content.split(/\r?\n/)) {
@@ -21,6 +24,9 @@ if (fs.existsSync(envPath)) {
     }
     const key = trimmed.slice(0, eqIndex);
     const value = trimmed.slice(eqIndex + 1);
+    if (key === 'NODE_ENV' || key === 'BCRYPT_ROUNDS') {
+      continue;
+    }
     // Only set if not already defined (don't override CI variables)
     if (process.env[key] === undefined) {
       process.env[key] = value;

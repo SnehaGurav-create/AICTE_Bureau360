@@ -17,6 +17,7 @@ import { requestId } from './middleware/requestId.js';
 import { notFound } from './middleware/notFound.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import metaRoutes from './modules/meta/meta.routes.js';
+import authRoutes from './modules/auth/auth.routes.js';
 import institutionRoutes from './modules/institutions/institutions.routes.js';
 import complaintRoutes from './modules/complaints/complaints.routes.js';
 
@@ -103,6 +104,7 @@ export function createApp() {
   });
 
   // ── API routes ─────────────────────────────────────────────────────────
+  app.use('/api/v1/auth', authRoutes);
   app.use('/api/v1', metaRoutes);
   app.use('/api/v1', institutionRoutes);
   app.use('/api/v1/complaints', complaintRoutes);
