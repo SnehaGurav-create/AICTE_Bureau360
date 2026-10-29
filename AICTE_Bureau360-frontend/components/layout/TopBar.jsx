@@ -21,6 +21,29 @@ export function TopBar({
 }) {
   const currentBureau = BUREAUS.find((b) => b.id === selectedBureau) || BUREAUS[0];
   const { currentUser, role, signOut } = useAuth();
+  const [notificationCount, setNotificationCount] = React.useState(14);
+
+  React.useEffect(() => {
+    const updateCount = () => {
+      try {
+        const stored = localStorage.getItem('bureau360_cases_list');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          const transferredCount = parsed.filter(c => c.transferHistory && c.transferHistory.length > 0).length;
+          setNotificationCount(14 + transferredCount);
+        }
+      } catch (e) {
+        // ignore
+      }
+    };
+    updateCount();
+    window.addEventListener('storage', updateCount);
+    window.addEventListener('bureau360_data_updated', updateCount);
+    return () => {
+      window.removeEventListener('storage', updateCount);
+      window.removeEventListener('bureau360_data_updated', updateCount);
+    };
+  }, []);
   const roleMeta = role ? ROLE_META[role] : null;
 
   const handleSignOut = () => {
