@@ -7,6 +7,15 @@
 [![Python](https://img.shields.io/badge/Python-3.11%20%7C%20Flask%20ML-yellow?logo=python)](https://python.org/)
 [![SIH 2026](https://img.shields.io/badge/Smart%20India%20Hackathon-PS%2026264-orange)](https://www.sih.gov.in/)
 
+<p align="center">
+  <a href="https://aicte-bureau360.vercel.app/" target="_blank">
+    <img
+      src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=21&pause=1000&color=36BCF7&center=true&vCenter=true&width=650&lines=Click+Me;AICTE+Cumulative+Platform;Unified+Scrutiny+Intelligence"
+      alt="Visit Bureau360 - AICTE Cumulative Platform"
+    />
+  </a>
+</p>
+
 > **Smart India Hackathon 2026 — Problem Statement 26264**  
 > AICTE Bureau360 is an enterprise-grade grievance redressal, multi-bureau workflow management, overlap intelligence, and institutional monitoring system engineered for the All India Council for Technical Education (AICTE).
 
