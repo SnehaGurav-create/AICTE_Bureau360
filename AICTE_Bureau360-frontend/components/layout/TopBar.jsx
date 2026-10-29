@@ -170,7 +170,7 @@ export function TopBar({
           title="14 Cross-Bureau Overlap Alerts"
         >
           <BellIcon size={18} />
-          <span className={styles.notificationCount}>14</span>
+          <span className={styles.notificationCount}>{notificationCount}</span>
         </button>
 
         {currentUser && (
