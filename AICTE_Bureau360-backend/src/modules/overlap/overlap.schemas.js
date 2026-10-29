@@ -20,13 +20,20 @@ export const listPendingLinksSchema = {
   }),
 };
 
-/** PATCH /overlaps/:linkId/review — confirm or dismiss a link */
+/** PATCH /overlaps/:linkId/review — confirm or dismiss a link with coordination & primary case selection */
 export const reviewLinkSchema = {
   params: z.object({
     linkId: z.coerce.number().int().positive(),
   }),
   body: z.object({
-    decision: z.enum(['CONFIRMED', 'DISMISSED']),
+    decision: z.enum(['CONFIRMED', 'DISMISSED']).optional(),
+    review_status: z.enum(['CONFIRMED', 'DISMISSED']).optional(),
+    relationship_type: z
+      .enum(['POTENTIAL_DUPLICATE', 'CONFIRMED_DUPLICATE', 'RELATED_CASE', 'UNRELATED', 'DUPLICATE', 'RELATED'])
+      .optional(),
+    primary_case_id: z.string().uuid().optional(),
+    coordination_decision: z.string().optional(),
+    review_notes: z.string().optional(),
   }),
 };
 

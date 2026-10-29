@@ -31,6 +31,10 @@ export async function getComplaintStats(filters = {}) {
   const { rows } = await pool.query(
     `SELECT
        COUNT(*)::int AS total,
+       COUNT(*)::int AS total_received,
+       SUM(CASE WHEN c.disposition = 'DUPLICATE_LINKED' THEN 1 ELSE 0 END)::int AS confirmed_duplicates,
+       SUM(CASE WHEN c.disposition IS DISTINCT FROM 'DUPLICATE_LINKED' THEN 1 ELSE 0 END)::int AS unique_issues,
+       (SELECT COUNT(*)::int FROM case_relationships WHERE relationship_type = 'CONFIRMED_DUPLICATE' OR (review_status = 'CONFIRMED' AND relationship_type LIKE '%DUPLICATE%')) AS confirmed_duplicate_relationships,
        SUM(CASE WHEN c.status NOT IN ('RESOLVED','CLOSED','REJECTED') THEN 1 ELSE 0 END)::int AS open,
        SUM(CASE WHEN c.status IN ('RESOLVED','CLOSED') THEN 1 ELSE 0 END)::int AS resolved,
        SUM(CASE WHEN c.status = 'REJECTED' THEN 1 ELSE 0 END)::int AS rejected,
@@ -233,6 +237,11 @@ export async function getAgingAnalysis(filters = {}) {
        SUM(CASE WHEN age > 15 AND age <= 30 THEN 1 ELSE 0 END)::int AS "16_30_days",
        SUM(CASE WHEN age > 30 AND age <= 60 THEN 1 ELSE 0 END)::int AS "31_60_days",
        SUM(CASE WHEN age > 60 THEN 1 ELSE 0 END)::int AS "60_plus_days",
+       SUM(CASE WHEN age <= 7 THEN 1 ELSE 0 END)::int AS "d0_7",
+       SUM(CASE WHEN age > 7 AND age <= 15 THEN 1 ELSE 0 END)::int AS "d8_15",
+       SUM(CASE WHEN age > 15 AND age <= 30 THEN 1 ELSE 0 END)::int AS "d16_30",
+       SUM(CASE WHEN age > 30 AND age <= 60 THEN 1 ELSE 0 END)::int AS "d31_60",
+       SUM(CASE WHEN age > 60 THEN 1 ELSE 0 END)::int AS "d60_plus",
        COUNT(*)::int AS total
      FROM (
        SELECT EXTRACT(DAY FROM now() - c.received_on)::int AS age
@@ -267,9 +276,13 @@ export async function getMonthlyTrend(filters = {}) {
     `SELECT
        TO_CHAR(DATE_TRUNC('${truncType}', received_on), '${formatStr}') AS period,
        COUNT(*)::int AS total,
+       COUNT(*)::int AS total_received,
+       SUM(CASE WHEN disposition = 'DUPLICATE_LINKED' THEN 1 ELSE 0 END)::int AS confirmed_duplicates,
+       SUM(CASE WHEN disposition IS DISTINCT FROM 'DUPLICATE_LINKED' THEN 1 ELSE 0 END)::int AS unique_issues,
        SUM(CASE WHEN status IN ('RESOLVED','CLOSED') THEN 1 ELSE 0 END)::int AS resolved,
        SUM(CASE WHEN status NOT IN ('RESOLVED','CLOSED','REJECTED') THEN 1 ELSE 0 END)::int AS open,
-       SUM(CASE WHEN has_overlap = true THEN 1 ELSE 0 END)::int AS with_overlap
+       SUM(CASE WHEN has_overlap = true THEN 1 ELSE 0 END)::int AS with_overlap,
+       ROUND((SUM(CASE WHEN status IN ('RESOLVED','CLOSED') THEN 1 ELSE 0 END)::numeric / NULLIF(COUNT(*), 0)) * 100, 2) AS disposal_rate
      FROM complaints ${where}
      GROUP BY DATE_TRUNC('${truncType}', received_on)
      ORDER BY DATE_TRUNC('${truncType}', received_on) ASC`,
@@ -280,10 +293,27 @@ export async function getMonthlyTrend(filters = {}) {
 
 /**
  * Overlap analytics report — breakdown by review status, link types, and match methods.
+ * Distinguishes total complaints received from unique issues and confirmed duplicates.
  *
  * @returns {Promise<object>}
  */
 export async function getOverlapAnalytics() {
+  const summary = await pool.query(`
+    SELECT
+      (SELECT COUNT(*)::int FROM complaints) AS total_received_complaints,
+      (SELECT SUM(CASE WHEN disposition = 'DUPLICATE_LINKED' THEN 1 ELSE 0 END)::int FROM complaints) AS confirmed_duplicates,
+      (SELECT SUM(CASE WHEN disposition IS DISTINCT FROM 'DUPLICATE_LINKED' THEN 1 ELSE 0 END)::int FROM complaints) AS unique_issues,
+      (SELECT COUNT(*)::int FROM case_relationships WHERE relationship_type = 'CONFIRMED_DUPLICATE') AS confirmed_duplicate_relationships,
+      (SELECT COUNT(*)::int FROM case_relationships WHERE relationship_type = 'POTENTIAL_DUPLICATE' AND review_status = 'PENDING_REVIEW') AS potential_duplicates,
+      (SELECT COUNT(*)::int FROM case_relationships WHERE relationship_type = 'RELATED_CASE') AS related_cases
+  `);
+
+  const relationshipStats = await pool.query(`
+    SELECT relationship_type, COUNT(*)::int AS count
+    FROM case_relationships
+    GROUP BY relationship_type
+  `);
+
   const statusStats = await pool.query(
     `SELECT review_status, COUNT(*)::int AS count
      FROM complaint_links
@@ -305,6 +335,8 @@ export async function getOverlapAnalytics() {
   );
 
   return {
+    metrics: summary.rows[0],
+    relationships_breakdown: relationshipStats.rows,
     review_status_breakdown: statusStats.rows,
     link_type_breakdown: typeStats.rows,
     matching_methods: reasonsBreakdown.rows,

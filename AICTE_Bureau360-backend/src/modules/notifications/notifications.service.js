@@ -9,6 +9,7 @@ export const NOTIFICATION_TYPES = {
   OVERLAP_DETECTED: 'OVERLAP_DETECTED',
   SLA_WARNING: 'SLA_WARNING',
   SLA_BREACH: 'SLA_BREACH',
+  ESCALATION: 'ESCALATION',
   COMPLAINT_ASSIGNED: 'COMPLAINT_ASSIGNED',
   COMPLAINT_STATUS_CHANGED: 'COMPLAINT_STATUS_CHANGED',
   COMPLAINT_TRANSFERRED: 'COMPLAINT_TRANSFERRED',
@@ -162,6 +163,54 @@ export async function createSlaBreach(complaint) {
 
   return repo.createBulkNotifications(notifications);
 }
+
+/**
+ * Create an escalation alert when a complaint is auto-escalated or escalated by officer.
+ *
+ * @param {object} complaint
+ * @returns {Promise<Array>}
+ */
+export async function createEscalationAlert(complaint) {
+  const targetBureauId = complaint.escalate_to_bureau_id || complaint.current_bureau_id;
+  if (!targetBureauId) return [];
+
+  const users = await repo.findUsersByBureau(targetBureauId);
+  if (users.length === 0) {
+    logger.warn({ targetBureauId }, 'No active users in escalation target bureau');
+    return [];
+  }
+
+  const notifications = users.map((user) => ({
+    user_id: user.id,
+    type: NOTIFICATION_TYPES.ESCALATION,
+    channel: 'IN_APP',
+    subject: `🚨 Case Escalated — ${complaint.complaint_no}`,
+    body: `Complaint ${complaint.complaint_no} (${complaint.institution_name || 'Institution'}) has been escalated to your bureau for urgent intervention.`,
+    metadata: {
+      complaint_id: complaint.id,
+      complaint_no: complaint.complaint_no,
+      reason: complaint.reason || 'SLA breach escalation threshold reached',
+    },
+  }));
+
+  const emailNotifications = users
+    .filter((u) => u.email)
+    .map((user) => ({
+      user_id: user.id,
+      to_email: user.email,
+      type: NOTIFICATION_TYPES.ESCALATION,
+      channel: 'EMAIL',
+      subject: `[Bureau360] 🚨 Case Escalated — ${complaint.complaint_no}`,
+      body: `Dear ${user.name},\n\nComplaint ${complaint.complaint_no} regarding ${complaint.institution_name || 'Institution'} has been escalated to your bureau for immediate review and resolution.\n\nPlease log in to Bureau360 to take required action.\n\nRegards,\nAICTE Bureau360 System`,
+      metadata: {
+        complaint_id: complaint.id,
+        complaint_no: complaint.complaint_no,
+      },
+    }));
+
+  return repo.createBulkNotifications([...notifications, ...emailNotifications]);
+}
+
 
 /**
  * Get user notifications (in-app inbox).

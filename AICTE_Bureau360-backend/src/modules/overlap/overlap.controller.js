@@ -36,7 +36,7 @@ export async function listPendingLinks(req, res) {
 export async function reviewLink(req, res) {
   const updated = await service.reviewLink(
     req.params.linkId,
-    req.body.decision,
+    req.body,
     req.user,
   );
   res.json({ data: updated });
@@ -56,4 +56,20 @@ export async function getComplaintLinks(req, res) {
 export async function getOverlapDashboard(req, res) {
   const stats = await service.getOverlapDashboard();
   res.json({ data: stats });
+}
+
+/**
+ * GET /overlaps/calibration — active learning evaluation metrics on reviewed examples.
+ */
+export async function getCalibrationStats(req, res) {
+  const stats = await service.getCalibrationStats();
+  res.json({ data: stats });
+}
+
+/**
+ * POST /overlaps/calibrate — trigger recalibration using reviewed examples.
+ */
+export async function recalibrateModel(req, res) {
+  const result = await service.recalibrateModel(req.user);
+  res.json({ data: result });
 }

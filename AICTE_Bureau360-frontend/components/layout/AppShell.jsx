@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import styles from '../../app/shell.module.css';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
+import { BureauChatbot } from '../chat/BureauChatbot';
 
 export function AppShell({
   children,
@@ -98,6 +99,9 @@ export function AppShell({
           {children}
         </main>
       </div>
+
+      {/* Floating AI Copilot Chatbot (Bottom Right) */}
+      <BureauChatbot onNavigateTab={onSelectTab} />
     </div>
   );
 }

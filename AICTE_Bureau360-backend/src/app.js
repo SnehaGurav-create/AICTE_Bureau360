@@ -23,6 +23,8 @@ import complaintRoutes from './modules/complaints/complaints.routes.js';
 import overlapRoutes from './modules/overlap/overlap.routes.js';
 import notificationRoutes from './modules/notifications/notifications.routes.js';
 import reportRoutes from './modules/reports/reports.routes.js';
+import coordinationRoutes from './modules/coordination/coordination.routes.js';
+import chatRoutes from './modules/chat/chat.routes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = path.resolve(__dirname, '..');
@@ -130,12 +132,14 @@ export function createApp() {
 
   // ── API routes ─────────────────────────────────────────────────────────
   app.use('/api/v1/auth', authRoutes);
+  app.use('/api/v1/chat', chatRoutes);
   app.use('/api/v1', metaRoutes);
   app.use('/api/v1', institutionRoutes);
   app.use('/api/v1/complaints', complaintRoutes);
   app.use('/api/v1/overlaps', overlapRoutes);
   app.use('/api/v1/notifications', notificationRoutes);
   app.use('/api/v1/reports', reportRoutes);
+  app.use('/api/v1/coordination', coordinationRoutes);
 
   // ── 404 + error handler ───────────────────────────────────────────────
   app.use(notFound);

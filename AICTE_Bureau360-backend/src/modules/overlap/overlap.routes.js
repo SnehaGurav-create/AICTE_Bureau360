@@ -35,6 +35,20 @@ router.get(
   controller.getOverlapDashboard,
 );
 
+// Active learning calibration & model evaluation statistics
+router.get(
+  '/calibration',
+  authorize('overlap:review'),
+  controller.getCalibrationStats,
+);
+
+// Recalibrate overlap detection on reviewed examples
+router.post(
+  '/calibrate',
+  authorize('overlap:review'),
+  controller.recalibrateModel,
+);
+
 // Get links for a specific complaint
 router.get(
   '/complaint/:complaintId',
