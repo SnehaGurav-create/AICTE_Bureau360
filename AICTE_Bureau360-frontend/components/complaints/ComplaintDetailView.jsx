@@ -20,7 +20,7 @@ import { useAuth } from '../../services/authContext.js';
 import { ACTIONS } from '../../services/authConfig.js';
 import { APP_CONFIG } from '../../services/apiConfig.js';
 
-export function ComplaintDetailView({ complaint, onBack, onSelectRelatedCase, onSelectInstitution }) {
+export function ComplaintDetailView({ complaint, onBack, onSelectRelatedCase, onSelectInstitution, onTransferCase }) {
   const { can } = useAuth();
   const canUpdateStatus = can(ACTIONS.UPDATE_STATUS);
   const canEdit = can(ACTIONS.EDIT_COMPLAINT);
@@ -108,8 +108,10 @@ export function ComplaintDetailView({ complaint, onBack, onSelectRelatedCase, on
     .map((id) => COMPLAINT_CASES.find((c) => c.id === id))
     .filter(Boolean);
 
+  const [timelineEvents, setTimelineEvents] = useState(complaint.timeline || []);
+
   // Sorting timeline chronologically (earliest to latest)
-  const sortedTimeline = [...(complaint.timeline || [])].sort((a, b) => {
+  const sortedTimeline = [...timelineEvents].sort((a, b) => {
     return new Date(a.date) - new Date(b.date);
   });
 
