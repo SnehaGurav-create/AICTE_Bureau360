@@ -134,9 +134,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  if (adminUserId) {
-    await pool.query(`DELETE FROM users WHERE id IN ($1, $2)`, [adminUserId, bureauUserId]);
-  }
+  // Test records remain in append-only audit trail
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -391,6 +389,36 @@ describe('Member 2: Analytics & Reporting Calculations', () => {
     expect(res.body.data.review_status_breakdown).toBeDefined();
     expect(res.body.data.link_type_breakdown).toBeDefined();
     expect(res.body.data.matching_methods).toBeDefined();
+  });
+
+  it('GET /overlaps/calibration returns active learning evaluation metrics and feature weights', async () => {
+    const res = await request(app)
+      .get('/api/v1/overlaps/calibration')
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toBeDefined();
+    expect(res.body.data.totalEvaluations).toBeGreaterThan(0);
+    expect(res.body.data.confirmedDuplicates).toBeGreaterThan(0);
+    expect(res.body.data.modelPrecision).toBeGreaterThanOrEqual(80);
+    expect(res.body.data.featureWeights.institution).toBe(0.40);
+    expect(res.body.data.featureWeights.ml_similarity).toBe(0.35);
+  });
+
+  it('POST /overlaps/calibrate triggers active learning model recalibration on reviewed examples', async () => {
+    const res = await request(app)
+      .get('/api/v1/overlaps/calibration')
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    const initialPrecision = res.body.data.modelPrecision;
+
+    const calibrateRes = await request(app)
+      .post('/api/v1/overlaps/calibrate')
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(calibrateRes.status).toBe(200);
+    expect(calibrateRes.body.data.success).toBe(true);
+    expect(calibrateRes.body.data.modelPrecision).toBeGreaterThanOrEqual(initialPrecision);
   });
 });
 

@@ -289,6 +289,41 @@ export async function changeComplaintStatus(id, newStatus, remarks, user) {
       client,
     );
 
+    // Coordinate status change with primary or linked duplicates
+    if (complaint.primary_complaint_id) {
+      await repo.insertAction(
+        {
+          complaint_id: complaint.primary_complaint_id,
+          action_type: ACTION_TYPES.STATUS_CHANGED,
+          remarks: `[Coordinated status from duplicate ${complaint.complaint_no} -> ${newStatus}] ${remarks || ''}`.trim(),
+          is_internal: true,
+          performed_by: user.id,
+          performed_by_bureau: user.bureau_id,
+          metadata: { coordinated_from_case: complaint.id, coordinated_case_no: complaint.complaint_no },
+        },
+        client,
+      );
+    } else if (complaint.disposition === 'PRIMARY_COORDINATION') {
+      const { rows: linkedDups } = await client.query(
+        'SELECT id, complaint_no FROM complaints WHERE primary_complaint_id = $1',
+        [id],
+      );
+      for (const dup of linkedDups) {
+        await repo.insertAction(
+          {
+            complaint_id: dup.id,
+            action_type: ACTION_TYPES.STATUS_CHANGED,
+            remarks: `[Coordinated status update from primary lead ${complaint.complaint_no} -> ${newStatus}] ${remarks || ''}`.trim(),
+            is_internal: true,
+            performed_by: user.id,
+            performed_by_bureau: user.bureau_id,
+            metadata: { coordinated_from_primary: id, primary_case_no: complaint.complaint_no },
+          },
+          client,
+        );
+      }
+    }
+
     const updated = await repo.findComplaintById(id, user, client);
     return withAllowedNextStatuses(updated);
   });
@@ -331,6 +366,41 @@ export async function addRemark(id, remarks, isInternal, user) {
       },
       client,
     );
+
+    // Route coordinated remark according to agreed coordination decision
+    if (complaint.primary_complaint_id) {
+      await repo.insertAction(
+        {
+          complaint_id: complaint.primary_complaint_id,
+          action_type: ACTION_TYPES.REMARK,
+          remarks: `[Coordinated Note from linked duplicate ${complaint.complaint_no}]: ${remarks}`,
+          is_internal: true,
+          performed_by: user.id,
+          performed_by_bureau: user.bureau_id,
+          metadata: { coordinated_from_case: complaint.id, coordinated_case_no: complaint.complaint_no },
+        },
+        client,
+      );
+    } else if (complaint.disposition === 'PRIMARY_COORDINATION') {
+      const { rows: linkedDups } = await client.query(
+        'SELECT id, complaint_no FROM complaints WHERE primary_complaint_id = $1',
+        [id],
+      );
+      for (const dup of linkedDups) {
+        await repo.insertAction(
+          {
+            complaint_id: dup.id,
+            action_type: ACTION_TYPES.REMARK,
+            remarks: `[Coordinated Note from primary lead ${complaint.complaint_no}]: ${remarks}`,
+            is_internal: true,
+            performed_by: user.id,
+            performed_by_bureau: user.bureau_id,
+            metadata: { coordinated_from_primary: id, primary_case_no: complaint.complaint_no },
+          },
+          client,
+        );
+      }
+    }
 
     return action;
   });

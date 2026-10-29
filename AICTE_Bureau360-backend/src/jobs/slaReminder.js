@@ -129,6 +129,10 @@ export async function processAutoEscalations() {
         });
 
         escalatedCount++;
+        // Dispatch ESCALATION notification to target bureau users
+        await notifService.createEscalationAlert(complaint).catch((err) => {
+          logger.warn({ err, complaintId: complaint.id }, 'Failed to dispatch escalation notification');
+        });
         logger.info({ complaintNo: complaint.complaint_no }, 'Complaint auto-escalated successfully');
       } catch (err) {
         logger.error({ err, complaintId: complaint.id }, 'Failed to auto-escalate complaint');

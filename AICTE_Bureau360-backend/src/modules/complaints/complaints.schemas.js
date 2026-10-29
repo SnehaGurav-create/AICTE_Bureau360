@@ -31,6 +31,7 @@ export const listComplaintsSchema = {
     priority: priorityEnum.optional(),
     aicte_id: z.string().optional(),
     bureau_id: z.coerce.number().int().positive().optional(),
+    region_id: z.coerce.number().int().positive().optional(),
     assignee_id: z.string().uuid().optional(),
     from: z.string().date().optional(), // received_on >= from
     to: z.string().date().optional(), // received_on <= to

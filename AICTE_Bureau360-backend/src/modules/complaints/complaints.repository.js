@@ -89,6 +89,7 @@ export async function findComplaints(filters, user, pagination, sort) {
     { column: 'c.category_id', operator: '=', value: filters.category_id },
     { column: 'c.priority', operator: '=', value: filters.priority },
     { column: 'i.aicte_id', operator: '=', value: filters.aicte_id },
+    { column: 'i.region_id', operator: '=', value: filters.region_id },
     { column: 'c.current_bureau_id', operator: '=', value: filters.bureau_id },
     { column: 'c.current_assignee_id', operator: '=', value: filters.assignee_id },
     { column: 'c.received_on', operator: '>=', value: filters.from },
@@ -141,11 +142,26 @@ export async function findComplaints(filters, user, pagination, sort) {
   const dataSql = `
     SELECT
       c.*,
+      c.sla_due_at AS expected_disposal_date,
       i.name AS institution_name,
       i.aicte_id,
       cc.name AS category_name,
       b.name AS bureau_name,
       u.full_name AS assignee_name,
+      (SELECT action_type FROM complaint_actions WHERE complaint_id = c.id ORDER BY created_at DESC LIMIT 1) AS last_action,
+      (SELECT created_at FROM complaint_actions WHERE complaint_id = c.id ORDER BY created_at DESC LIMIT 1) AS last_action_date,
+      CASE
+        WHEN c.status = 'NEW' THEN 'Assign bureau / Initial triage'
+        WHEN c.status = 'UNDER_REVIEW' THEN 'Assign investigation officer'
+        WHEN c.status = 'ASSIGNED' THEN 'Commence inquiry & evidence gathering'
+        WHEN c.status = 'IN_PROGRESS' THEN 'Complete investigation & record findings'
+        WHEN c.status = 'PENDING_INFO' THEN 'Await response from institution/complainant'
+        WHEN c.status = 'ESCALATED' THEN 'Bureau Head expedited review'
+        WHEN c.status = 'RESOLVED' THEN 'Final verification & case closure'
+        WHEN c.status IN ('CLOSED', 'REJECTED') THEN 'None (Disposed)'
+        WHEN c.status = 'REOPENED' THEN 'Re-examination under appeal'
+        ELSE 'Review case'
+      END AS next_action,
       (SELECT COUNT(*) FROM documents WHERE complaint_id = c.id) AS document_count
     FROM complaints c
     JOIN institutions i ON i.id = c.institution_id
@@ -179,6 +195,7 @@ export async function findComplaintById(id, user, db = pool) {
   const { rows } = await db.query(
     `SELECT
        c.*,
+       c.sla_due_at AS expected_disposal_date,
        i.name AS institution_name,
        i.aicte_id,
        i.city AS institution_city,
@@ -187,12 +204,28 @@ export async function findComplaintById(id, user, db = pool) {
        b.name AS bureau_name,
        u.full_name AS assignee_name,
        u.email AS assignee_email,
+       pc.complaint_no AS primary_complaint_no,
+       (SELECT action_type FROM complaint_actions WHERE complaint_id = c.id ORDER BY created_at DESC LIMIT 1) AS last_action,
+       (SELECT created_at FROM complaint_actions WHERE complaint_id = c.id ORDER BY created_at DESC LIMIT 1) AS last_action_date,
+       CASE
+         WHEN c.status = 'NEW' THEN 'Assign bureau / Initial triage'
+         WHEN c.status = 'UNDER_REVIEW' THEN 'Assign investigation officer'
+         WHEN c.status = 'ASSIGNED' THEN 'Commence inquiry & evidence gathering'
+         WHEN c.status = 'IN_PROGRESS' THEN 'Complete investigation & record findings'
+         WHEN c.status = 'PENDING_INFO' THEN 'Await response from institution/complainant'
+         WHEN c.status = 'ESCALATED' THEN 'Bureau Head expedited review'
+         WHEN c.status = 'RESOLVED' THEN 'Final verification & case closure'
+         WHEN c.status IN ('CLOSED', 'REJECTED') THEN 'None (Disposed)'
+         WHEN c.status = 'REOPENED' THEN 'Re-examination under appeal'
+         ELSE 'Review case'
+       END AS next_action,
        (SELECT COUNT(*) FROM documents WHERE complaint_id = c.id) AS document_count
      FROM complaints c
      JOIN institutions i ON i.id = c.institution_id
      JOIN complaint_categories cc ON cc.id = c.category_id
      LEFT JOIN bureaus b ON b.id = c.current_bureau_id
      LEFT JOIN users u ON u.id = c.current_assignee_id
+     LEFT JOIN complaints pc ON pc.id = c.primary_complaint_id
      WHERE c.id = $1
        AND ${scopeClause}`,
     [id, ...scopeParams],
