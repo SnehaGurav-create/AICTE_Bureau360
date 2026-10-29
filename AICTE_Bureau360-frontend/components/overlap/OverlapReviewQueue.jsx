@@ -335,6 +335,68 @@ export function OverlapReviewQueue({ onInspectCase }) {
       lastCalibrated: 'Just now (New Human Feedback)',
     }));
 
+    // Synchronize linked status to casesList and broadcast across windows
+    try {
+      const stored = localStorage.getItem('bureau360_cases_list');
+      const currentList = stored ? JSON.parse(stored) : COMPLAINT_CASES;
+      
+      const pId = selectedCaseForReview.primaryCaseId;
+      const sId = selectedCaseForReview.secondaryCaseId;
+      const reviewDateStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+      const reviewerName = currentUser?.name || 'PGRC Desk Officer';
+
+      const updatedCases = currentList.map(c => {
+        if (c.id === pId) {
+          const existingRelated = c.relatedCaseIds || [];
+          const nextRelated = existingRelated.includes(sId) ? existingRelated : [...existingRelated, sId];
+          const newTimelineItem = {
+            id: 'TL-REV-' + Date.now(),
+            date: reviewDateStr,
+            stage: 'Overlap Verified & Linked',
+            bureau: 'AICTE Coordination Cell',
+            officer: reviewerName,
+            notes: `Duplicate confirmed. ${sId} designated as Linked Duplicate with Zero Data Loss. Action history unified.`
+          };
+          return {
+            ...c,
+            relatedCaseIds: nextRelated,
+            overlapReview: {
+              status: decisionType === 'confirmed_duplicate' ? 'confirmed' : decisionType,
+              relationshipType: decisionType === 'confirmed_duplicate' ? 'CONFIRMED_DUPLICATE' : 'RELATED_CASE',
+              reason: reviewRemark,
+              reviewerNotes: `Confirmed by ${reviewerName} on ${reviewDateStr}. Primary lead assigned to ${pId}.`,
+              reviewedBy: reviewerName,
+              reviewDate: reviewDateStr
+            },
+            timeline: [...(c.timeline || []), newTimelineItem]
+          };
+        }
+        if (c.id === sId) {
+          const existingRelated = c.relatedCaseIds || [];
+          const nextRelated = existingRelated.includes(pId) ? existingRelated : [...existingRelated, pId];
+          return {
+            ...c,
+            relatedCaseIds: nextRelated,
+            overlapReview: {
+              status: decisionType === 'confirmed_duplicate' ? 'confirmed' : decisionType,
+              relationshipType: 'DUPLICATE_LINKED',
+              reason: reviewRemark,
+              reviewerNotes: `Linked as secondary duplicate to ${pId}. Records preserved.`,
+              reviewedBy: reviewerName,
+              reviewDate: reviewDateStr
+            }
+          };
+        }
+        return c;
+      });
+
+      localStorage.setItem('bureau360_cases_list', JSON.stringify(updatedCases));
+      window.dispatchEvent(new Event('bureau360_data_updated'));
+      window.dispatchEvent(new Event('storage'));
+    } catch (syncErr) {
+      console.warn('Failed to sync case linking', syncErr);
+    }
+
     // If there is an associated backend link ID, sync to live API
     if (selectedCaseForReview.backendLinkId) {
       try {
